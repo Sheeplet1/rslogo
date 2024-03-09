@@ -1,3 +1,7 @@
+mod error;
+mod parse;
+mod turtle;
+
 use clap::Parser;
 use unsvg::Image;
 
