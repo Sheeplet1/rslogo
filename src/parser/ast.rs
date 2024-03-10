@@ -8,7 +8,6 @@ pub enum ASTNode {
 pub enum Expression {
     Float(f32),
     Number(i32),
-    Usize(usize),
     Query(Query),
 }
 

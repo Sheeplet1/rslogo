@@ -38,141 +38,65 @@ pub fn parse_tokens(
             }
             "FORWARD" => {
                 curr_pos += 1;
-                if tokens[curr_pos].starts_with('"') {
-                    let expr = parse_expression(&tokens, curr_pos)?;
-                    ast.push(ASTNode::Command(Command::Forward(Expression::Float(expr))));
-                } else if tokens[curr_pos].starts_with(':') {
-                    let expr = parse_variable(&tokens, curr_pos, variables)?;
-                    ast.push(ASTNode::Command(Command::Forward(expr)));
-                } else {
-                    let expr = parse_query(&tokens, curr_pos)?;
-                    ast.push(ASTNode::Command(Command::Forward(Expression::Query(expr))));
-                }
+                let expr = match_parse(&tokens, curr_pos, variables)?;
+                ast.push(ASTNode::Command(Command::Forward(expr)));
             }
             "BACK" => {
                 curr_pos += 1;
-                if tokens[curr_pos].starts_with('"') {
-                    let expr = parse_expression(&tokens, curr_pos)?;
-                    ast.push(ASTNode::Command(Command::Back(Expression::Float(expr))));
-                } else if tokens[curr_pos].starts_with(':') {
-                    let expr = parse_variable(&tokens, curr_pos, variables)?;
-                    ast.push(ASTNode::Command(Command::Back(expr)));
-                } else {
-                    let expr = parse_query(&tokens, curr_pos)?;
-                    ast.push(ASTNode::Command(Command::Back(Expression::Query(expr))));
-                }
+                let expr = match_parse(&tokens, curr_pos, variables)?;
+                ast.push(ASTNode::Command(Command::Back(expr)));
             }
             "LEFT" => {
                 curr_pos += 1;
-                if tokens[curr_pos].starts_with('"') {
-                    let expr = parse_expression(&tokens, curr_pos)?;
-                    ast.push(ASTNode::Command(Command::Left(Expression::Float(expr))));
-                } else if tokens[curr_pos].starts_with(':') {
-                    let expr = parse_variable(&tokens, curr_pos, variables)?;
-                    ast.push(ASTNode::Command(Command::Left(expr)));
-                } else {
-                    let expr = parse_query(&tokens, curr_pos)?;
-                    ast.push(ASTNode::Command(Command::Left(Expression::Query(expr))));
-                }
+                let expr = match_parse(&tokens, curr_pos, variables)?;
+                ast.push(ASTNode::Command(Command::Left(expr)));
             }
             "RIGHT" => {
                 curr_pos += 1;
-                if tokens[curr_pos].starts_with('"') {
-                    let expr = parse_expression(&tokens, curr_pos)?;
-                    ast.push(ASTNode::Command(Command::Right(Expression::Float(expr))));
-                } else if tokens[curr_pos].starts_with(':') {
-                    let expr = parse_variable(&tokens, curr_pos, variables)?;
-                    ast.push(ASTNode::Command(Command::Right(expr)));
-                } else {
-                    let expr = parse_query(&tokens, curr_pos)?;
-                    ast.push(ASTNode::Command(Command::Right(Expression::Query(expr))));
-                }
+                let expr = match_parse(&tokens, curr_pos, variables)?;
+                ast.push(ASTNode::Command(Command::Right(expr)));
             }
             "SETHEADING" => {
                 curr_pos += 1;
-                if tokens[curr_pos].starts_with('"') {
-                    let expr = parse_expression(&tokens, curr_pos)? as i32;
-                    ast.push(ASTNode::Command(Command::SetHeading(Expression::Number(
-                        expr,
-                    ))));
-                } else if tokens[curr_pos].starts_with(':') {
-                    let expr = parse_variable(&tokens, curr_pos, variables)?;
-                    ast.push(ASTNode::Command(Command::SetHeading(expr)));
-                } else {
-                    let expr = parse_query(&tokens, curr_pos)?;
-                    ast.push(ASTNode::Command(Command::SetHeading(Expression::Query(
-                        expr,
-                    ))));
+                let expr = match_parse(&tokens, curr_pos, variables)?;
+                match expr {
+                    Expression::Float(val) => ast.push(ASTNode::Command(Command::SetHeading(
+                        Expression::Number(val as i32),
+                    ))),
+                    _ => {
+                        return Err(ParseError {
+                            msg: format!("Parsing error for SETHEADING: {:?}", tokens[curr_pos]),
+                        });
+                    }
                 }
             }
             "SETX" => {
                 curr_pos += 1;
-                if tokens[curr_pos].starts_with('"') {
-                    let expr = parse_expression(&tokens, curr_pos)?;
-                    ast.push(ASTNode::Command(Command::SetX(Expression::Float(expr))));
-                } else if tokens[curr_pos].starts_with(':') {
-                    let expr = parse_variable(&tokens, curr_pos, variables)?;
-                    ast.push(ASTNode::Command(Command::SetX(expr)));
-                } else {
-                    let expr = parse_query(&tokens, curr_pos)?;
-                    ast.push(ASTNode::Command(Command::SetX(Expression::Query(expr))));
-                }
+                let expr = match_parse(&tokens, curr_pos, variables)?;
+                ast.push(ASTNode::Command(Command::SetX(expr)));
             }
             "SETY" => {
                 curr_pos += 1;
-                if tokens[curr_pos].starts_with('"') {
-                    let expr = parse_expression(&tokens, curr_pos)?;
-                    ast.push(ASTNode::Command(Command::SetY(Expression::Float(expr))));
-                } else if tokens[curr_pos].starts_with(':') {
-                    let expr = parse_variable(&tokens, curr_pos, variables)?;
-                    ast.push(ASTNode::Command(Command::SetY(expr)));
-                } else {
-                    let expr = parse_query(&tokens, curr_pos)?;
-                    ast.push(ASTNode::Command(Command::SetY(Expression::Query(expr))));
-                }
+                let expr = match_parse(&tokens, curr_pos, variables)?;
+                ast.push(ASTNode::Command(Command::SetY(expr)));
             }
             "SETPENCOLOR" => {
                 curr_pos += 1;
-                if tokens[curr_pos].starts_with('"') {
-                    let expr = parse_expression(&tokens, curr_pos)? as usize;
-                    ast.push(ASTNode::Command(Command::SetPenColor(Expression::Usize(
-                        expr,
-                    ))));
-                } else if tokens[curr_pos].starts_with(':') {
-                    let expr = parse_variable(&tokens, curr_pos, variables)?;
-                    match expr {
-                        Expression::Float(val) => {
-                            ast.push(ASTNode::Command(Command::SetPenColor(Expression::Usize(
-                                val as usize,
-                            ))));
-                        }
-                        _ => {
-                            return Err(ParseError {
-                                msg: format!(
-                                    "Parsing error for SETPENCOLOR: {:?}",
-                                    tokens[curr_pos]
-                                ),
-                            });
-                        }
-                    }
-                } else {
-                    let expr = parse_query(&tokens, curr_pos)?;
-                    ast.push(ASTNode::Command(Command::SetPenColor(Expression::Query(
-                        expr,
-                    ))));
-                }
+                let expr = match_parse(&tokens, curr_pos, variables)?;
+                ast.push(ASTNode::Command(Command::SetPenColor(expr)));
             }
             "TURN" => {
                 curr_pos += 1;
-                if tokens[curr_pos].starts_with('"') {
-                    let expr = parse_expression(&tokens, curr_pos)? as i32;
-                    ast.push(ASTNode::Command(Command::Turn(Expression::Number(expr))));
-                } else if tokens[curr_pos].starts_with(':') {
-                    let expr = parse_variable(&tokens, curr_pos, variables)?;
-                    ast.push(ASTNode::Command(Command::Turn(expr)));
-                } else {
-                    let expr = parse_query(&tokens, curr_pos)?;
-                    ast.push(ASTNode::Command(Command::Turn(Expression::Query(expr))));
+                let expr = match_parse(&tokens, curr_pos, variables)?;
+                match expr {
+                    Expression::Float(val) => ast.push(ASTNode::Command(Command::Turn(
+                        Expression::Number(val as i32),
+                    ))),
+                    _ => {
+                        return Err(ParseError {
+                            msg: format!("Parsing error for TURN: {:?}", tokens[curr_pos]),
+                        });
+                    }
                 }
             }
             "MAKE" => {
@@ -200,6 +124,8 @@ pub fn parse_tokens(
                     Ok(Expression::Query(query))
                 };
 
+                // Now that expr is of type `Expression`, we can insert it into the
+                // variables HashMap, making it easier on the execution phase.
                 match expr {
                     Ok(expr) => variables.insert(var_name.to_string(), expr),
                     Err(e) => return Err(e),
@@ -229,6 +155,23 @@ pub fn parse_tokens(
 /// If it is a value, then it will be parsed into a f32.
 ///
 /// If it is a query, then it will be parsed into a f32.
+
+/// Matches up the token to its corresponding parsing function. This is
+/// necessary because the token may be a variable, a query or a value which
+/// all need to be parsed differently.
+fn match_parse(
+    tokens: &[&str],
+    pos: usize,
+    variables: &HashMap<String, Expression>,
+) -> Result<Expression, ParseError> {
+    if tokens[pos].starts_with(':') {
+        parse_variable(tokens, pos, variables)
+    } else if tokens[pos].starts_with('"') {
+        parse_expression(tokens, pos).map(Expression::Float)
+    } else {
+        parse_query(tokens, pos).map(Expression::Query)
+    }
+}
 
 /// Parse an expression from a token. This expression will always result in
 /// a f32 value.

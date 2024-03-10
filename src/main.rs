@@ -53,7 +53,7 @@ fn main() -> Result<(), ()> {
     let tokens = parser::parse::tokenize_script(&contents);
     let ast = parser::parse::parse_tokens(tokens, &mut variables).unwrap();
 
-    match interpreter::execute::execute(ast, &mut turtle, &mut variables) {
+    match interpreter::execute::execute(ast, &mut turtle) {
         Ok(_) => (),
         Err(e) => {
             eprintln!("{e}");

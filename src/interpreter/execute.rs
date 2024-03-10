@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::{
     errors::ExecutionError,
     parser::ast::{ASTNode, Command, Expression},
@@ -8,11 +6,7 @@ use crate::{
 use super::turtle::Turtle;
 
 /// Execute instructions in the AST on the turtle to draw an image.
-pub fn execute(
-    ast: Vec<ASTNode>,
-    turtle: &mut Turtle,
-    variables: &mut HashMap<String, Expression>,
-) -> Result<(), ExecutionError> {
+pub fn execute(ast: Vec<ASTNode>, turtle: &mut Turtle) -> Result<(), ExecutionError> {
     for node in ast {
         match node {
             ASTNode::Command(command) => match command {
@@ -55,13 +49,16 @@ pub fn execute(
                     }
                 }
                 Command::SetPenColor(expr) => {
-                    if let Expression::Usize(color) = expr {
+                    // Pen color must be a usize, but it is the only parameter
+                    // using usize, so I typecasted it here.
+                    if let Expression::Float(color) = expr {
                         turtle
-                            .set_pen_color(color)
+                            .set_pen_color(color as usize)
                             .map_err(|e| ExecutionError { msg: e.msg })?;
                     } else {
                         return Err(ExecutionError {
-                            msg: "Set pen color must be a usize.".to_string(),
+                            msg: "Set pen color is invalid. Check the parameter provided."
+                                .to_string(),
                         });
                     }
                 }
@@ -70,7 +67,7 @@ pub fn execute(
                         turtle.turn(degrees);
                     } else {
                         return Err(ExecutionError {
-                            msg: "Turn degrees must be a number.".to_string(),
+                            msg: "Turn degrees must be of type i32.".to_string(),
                         });
                     }
                 }
@@ -79,7 +76,7 @@ pub fn execute(
                         turtle.set_heading(degrees);
                     } else {
                         return Err(ExecutionError {
-                            msg: "Set heading degrees must be a number.".to_string(),
+                            msg: "Set heading degrees must of type i32.".to_string(),
                         });
                     }
                 }
@@ -101,8 +98,10 @@ pub fn execute(
                         });
                     }
                 }
-                Command::Make(key, expr) => {
-                    variables.insert(key, expr);
+                Command::Make(_, _) => {
+                    // This is not implemented since `Make` is handled in the
+                    // parser. See `parser::parse::parse_tokens`.
+                    unimplemented!()
                 }
             },
         }
