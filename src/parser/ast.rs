@@ -1,27 +1,53 @@
+#[derive(Debug)]
 pub enum ASTNode {
     Command(Command),
-    // Operation(Operation), // TODO: Fill out for later part
-    Value(Value),
+    // ControlFlow(ControlFlow),
 }
 
+#[derive(Debug)]
+pub enum Expression {
+    Float(f32),
+    Number(i32),
+    Usize(usize),
+    // Query(Query),
+}
+
+#[derive(Debug)]
 pub enum Command {
-    Forward(Box<ASTNode>),
-    Back(Box<ASTNode>),
-    Left(Box<ASTNode>),
-    Right(Box<ASTNode>),
-    PenUp(Box<ASTNode>),
-    PenDown(Box<ASTNode>),
-    SetPenColor(Box<ASTNode>),
-    Turn(Box<ASTNode>),
-    SetHeading(Box<ASTNode>),
-    SetX(Box<ASTNode>),
-    SetY(Box<ASTNode>),
+    Forward(Expression),
+    Back(Expression),
+    Left(Expression),
+    Right(Expression),
+    PenUp,
+    PenDown,
+    SetPenColor(Expression),
+    Turn(Expression),
+    SetHeading(Expression),
+    SetX(Expression),
+    SetY(Expression),
 }
 
-// pub enum Operation {
+// #[derive(Debug)]
+// pub enum Query {
+//     XCor,
+//     YCor,
+//     Heading,
+//     Color,
 // }
 
-pub enum Value {
-    Number(f32),
-    Color(usize),
-}
+// pub enum ControlFlow {
+//     If {
+//         condition: Condition,
+//         block: Vec<ASTNode>,
+//     },
+//     While {
+//         condition: Condition,
+//         block: Vec<ASTNode>,
+//     },
+// }
+//
+// pub enum Condition {
+//     Equals(Expression, Expression),
+//     LessThan(Expression, Expression),
+//     GreaterThan(Expression, Expression),
+// }

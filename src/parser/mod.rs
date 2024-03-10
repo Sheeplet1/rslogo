@@ -1,1 +1,2 @@
-mod ast;
+pub mod ast;
+pub mod parse;

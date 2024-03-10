@@ -1,4 +1,9 @@
+pub mod errors;
+mod interpreter;
 mod parser;
+
+use std::{fs::File, io::Read};
+use unsvg::COLORS;
 
 use clap::Parser;
 use unsvg::Image;
@@ -28,9 +33,27 @@ fn main() -> Result<(), ()> {
     let height = args.height;
     let width = args.width;
 
-    let image = Image::new(width, height);
+    let mut image = Image::new(width, height);
 
-    match image_path.extension().map(|s| s.to_str()).flatten() {
+    let mut file = File::open(file_path).unwrap();
+    let mut contents = String::new();
+    file.read_to_string(&mut contents).unwrap();
+
+    let mut turtle = interpreter::turtle::Turtle {
+        x: (width / 2) as f32,
+        y: (height / 2) as f32,
+        heading: 0,
+        pen_down: false,
+        pen_color: COLORS[7], // White
+        image: &mut image,
+    };
+
+    let tokens = parser::parse::tokenize_script(&contents);
+    let ast = parser::parse::parse_tokens(tokens).unwrap();
+
+    let _ = interpreter::execute::execute(ast, &mut turtle);
+
+    match image_path.extension().and_then(|s| s.to_str()) {
         Some("svg") => {
             let res = image.save_svg(&image_path);
             if let Err(e) = res {
