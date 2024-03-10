@@ -4,15 +4,15 @@ pub enum ASTNode {
     // ControlFlow(ControlFlow),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Expression {
     Float(f32),
     Number(i32),
     Usize(usize),
-    // Query(Query),
+    Query(Query),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Command {
     Forward(Expression),
     Back(Expression),
@@ -25,15 +25,16 @@ pub enum Command {
     SetHeading(Expression),
     SetX(Expression),
     SetY(Expression),
+    Make(String, Expression),
 }
 
-// #[derive(Debug)]
-// pub enum Query {
-//     XCor,
-//     YCor,
-//     Heading,
-//     Color,
-// }
+#[derive(Debug, Clone)]
+pub enum Query {
+    XCor,
+    YCor,
+    Heading,
+    Color,
+}
 
 // pub enum ControlFlow {
 //     If {

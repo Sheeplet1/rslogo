@@ -45,19 +45,15 @@ impl Turtle<'_> {
         self.heading = degrees;
     }
 
+    /// Set the x coordinate of the turtle. Note that even if the pen is down,
+    /// the turtle will not draw a line to the new position.
     pub fn set_x(&mut self, x: f32) {
-        if self.pen_down {
-            todo!()
-        }
-
         self.x = x
     }
 
+    /// Set the y coordinate of the turtle. Note that even if the pen is down,
+    /// the turtle will not draw a line to the new position.
     pub fn set_y(&mut self, y: f32) {
-        if self.pen_down {
-            todo!()
-        }
-
         self.y = y
     }
 

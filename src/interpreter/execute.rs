@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::{
     errors::ExecutionError,
     parser::ast::{ASTNode, Command, Expression},
@@ -6,9 +8,11 @@ use crate::{
 use super::turtle::Turtle;
 
 /// Execute instructions in the AST on the turtle to draw an image.
-pub fn execute(ast: Vec<ASTNode>, turtle: &mut Turtle) -> Result<(), ExecutionError> {
-    println!("execute ast: {:?}", ast);
-
+pub fn execute(
+    ast: Vec<ASTNode>,
+    turtle: &mut Turtle,
+    variables: &mut HashMap<String, Expression>,
+) -> Result<(), ExecutionError> {
     for node in ast {
         match node {
             ASTNode::Command(command) => match command {
@@ -16,7 +20,6 @@ pub fn execute(ast: Vec<ASTNode>, turtle: &mut Turtle) -> Result<(), ExecutionEr
                 Command::PenUp => turtle.pen_up(),
                 Command::Forward(dist) => {
                     if let Expression::Float(dist) = dist {
-                        println!("forward we go!");
                         turtle.forward(dist);
                     } else {
                         return Err(ExecutionError {
@@ -97,6 +100,9 @@ pub fn execute(ast: Vec<ASTNode>, turtle: &mut Turtle) -> Result<(), ExecutionEr
                             msg: "Set y must be a float.".to_string(),
                         });
                     }
+                }
+                Command::Make(key, expr) => {
+                    variables.insert(key, expr);
                 }
             },
         }

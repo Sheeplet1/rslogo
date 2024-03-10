@@ -2,7 +2,8 @@ pub mod errors;
 mod interpreter;
 mod parser;
 
-use std::{fs::File, io::Read};
+use parser::ast::Expression;
+use std::{collections::HashMap, fs::File, io::Read};
 use unsvg::COLORS;
 
 use clap::Parser;
@@ -48,10 +49,16 @@ fn main() -> Result<(), ()> {
         image: &mut image,
     };
 
+    let mut variables: HashMap<String, Expression> = HashMap::new();
     let tokens = parser::parse::tokenize_script(&contents);
-    let ast = parser::parse::parse_tokens(tokens).unwrap();
+    let ast = parser::parse::parse_tokens(tokens, &mut variables).unwrap();
 
-    let _ = interpreter::execute::execute(ast, &mut turtle);
+    match interpreter::execute::execute(ast, &mut turtle, &mut variables) {
+        Ok(_) => (),
+        Err(e) => {
+            eprintln!("{e}");
+        }
+    }
 
     match image_path.extension().and_then(|s| s.to_str()) {
         Some("svg") => {
