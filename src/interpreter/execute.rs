@@ -26,7 +26,7 @@ pub fn execute(
                         turtle.forward(match_queries(query, turtle));
                     } else {
                         return Err(ExecutionError {
-                            msg: "Forward distance must be a float.".to_string(),
+                            msg: format!("Forward distance must be a float. {:?}", dist),
                         });
                     }
                 }
@@ -59,7 +59,7 @@ pub fn execute(
                         turtle.right(match_queries(query, turtle));
                     } else {
                         return Err(ExecutionError {
-                            msg: "Right distance must be a float.".to_string(),
+                            msg: format!("Right distance must be a float. {:?}", expr),
                         });
                     }
                 }
@@ -81,7 +81,7 @@ pub fn execute(
                         turtle.turn(match_queries(query, turtle) as i32);
                     } else {
                         return Err(ExecutionError {
-                            msg: "Turn degrees must be of type i32.".to_string(),
+                            msg: format!("Turn must be of type i32. {:?}", expr),
                         });
                     }
                 }
@@ -92,7 +92,7 @@ pub fn execute(
                         turtle.set_heading(match_queries(query, turtle) as i32);
                     } else {
                         return Err(ExecutionError {
-                            msg: "Set heading degrees must of type i32.".to_string(),
+                            msg: format!("Set heading must be of type i32. {:?}", expr),
                         });
                     }
                 }
@@ -101,7 +101,7 @@ pub fn execute(
                         turtle.set_x(x);
                     } else {
                         return Err(ExecutionError {
-                            msg: "Set x must be a float.".to_string(),
+                            msg: format!("Set x must be a float. {:?}", expr),
                         });
                     }
                 }
@@ -110,7 +110,7 @@ pub fn execute(
                         turtle.set_y(y);
                     } else {
                         return Err(ExecutionError {
-                            msg: "Set y must be a float.".to_string(),
+                            msg: format!("Set y must be a float. {:?}", expr),
                         });
                     }
                 }
@@ -134,7 +134,7 @@ pub fn execute(
                         variables.insert(var, expr);
                     } else {
                         return Err(ExecutionError {
-                            msg: "Invalid expression for MAKE command.".to_string(),
+                            msg: format!("Make expression must be a float or a query. {:?}", expr),
                         });
                     }
                 }
