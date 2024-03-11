@@ -8,6 +8,7 @@ pub enum ASTNode {
 pub enum Expression {
     Float(f32),
     Number(i32),
+    Usize(usize),
     Query(Query),
 }
 
@@ -26,7 +27,7 @@ pub enum Command {
     SetX(Expression),
     SetY(Expression),
     Make(String, Expression),
-    AddAssign(String, Expression),
+    // AddAssign(String, Expression),
 }
 
 #[derive(Debug, Clone)]

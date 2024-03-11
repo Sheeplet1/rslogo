@@ -83,7 +83,16 @@ pub fn parse_tokens(
             "SETPENCOLOR" => {
                 curr_pos += 1;
                 let expr = match_parse(&tokens, curr_pos, variables)?;
-                ast.push(ASTNode::Command(Command::SetPenColor(expr)));
+                match expr {
+                    Expression::Float(val) => ast.push(ASTNode::Command(Command::SetPenColor(
+                        Expression::Usize(val as usize),
+                    ))),
+                    _ => {
+                        return Err(ParseError {
+                            msg: format!("Parsing error for SETPENCOLOR: {:?}", tokens[curr_pos]),
+                        });
+                    }
+                }
             }
             "TURN" => {
                 curr_pos += 1;
@@ -127,31 +136,37 @@ pub fn parse_tokens(
                 // Now that expr is of type `Expression`, we can insert it into the
                 // variables HashMap, making it easier on the execution phase.
                 match expr {
-                    Ok(expr) => variables.insert(var_name.to_string(), expr),
+                    Ok(expr) => {
+                        variables.insert(var_name.to_string(), expr.clone());
+                        ast.push(ASTNode::Command(Command::Make(var_name.to_string(), expr)));
+                    }
                     Err(e) => return Err(e),
                 };
             }
-            "ADDASSIGN" => {
-                // resulting expression should be
-                // ASTNode::Command(Command::AddAssign(var_name, expr))
-                // where expr could be a float, the variable itself or a query.
-                // for example: Expression::Float(50), Expression::Query(Query::Xcor)
-                curr_pos += 1;
-                if !tokens[curr_pos].starts_with('"') {
-                    return Err(ParseError {
-                        msg: format!("Invalid expression for ADDASSIGN: {:?}", tokens[curr_pos]),
-                    });
-                }
-                let var_name = tokens[curr_pos].trim_start_matches('"');
-
-                curr_pos += 1;
-                let expr = match_parse(&tokens, curr_pos, variables)?;
-
-                ast.push(ASTNode::Command(Command::AddAssign(
-                    var_name.to_string(),
-                    expr,
-                )));
-            }
+            // "ADDASSIGN" => {
+            //     // ADDASSIGN can only work on variables
+            //     curr_pos += 1;
+            //     if !tokens[curr_pos].starts_with('"') {
+            //         return Err(ParseError {
+            //             msg: format!("Invalid expression for ADDASSIGN: {:?}\nExpressions for ADDASSIGN should start with \"", tokens[curr_pos]),
+            //         });
+            //     }
+            //     let var_name = tokens[curr_pos].trim_start_matches('"');
+            //
+            //     if !variables.contains_key(var_name) {
+            //         return Err(ParseError {
+            //             msg: format!("Variable not found for ADDASSIGN: {:?}", var_name),
+            //         });
+            //     }
+            //
+            //     curr_pos += 1;
+            //     let expr = match_parse(&tokens, curr_pos, variables)?;
+            //
+            //     ast.push(ASTNode::Command(Command::AddAssign(
+            //         var_name.to_string(),
+            //         expr,
+            //     )));
+            // }
             _ => {
                 return Err(ParseError {
                     msg: format!("Parsing error for token: {:?}", tokens[curr_pos]),

@@ -4,7 +4,6 @@ mod parser;
 
 use parser::ast::Expression;
 use std::{collections::HashMap, fs::File, io::Read};
-use unsvg::COLORS;
 
 use clap::Parser;
 use unsvg::Image;
@@ -45,7 +44,7 @@ fn main() -> Result<(), ()> {
         y: (height / 2) as f32,
         heading: 0,
         pen_down: false,
-        pen_color: COLORS[7], // White
+        pen_color: 7, // White
         image: &mut image,
     };
 
@@ -53,7 +52,7 @@ fn main() -> Result<(), ()> {
     let tokens = parser::parse::tokenize_script(&contents);
     let ast = parser::parse::parse_tokens(tokens, &mut variables).unwrap();
 
-    match interpreter::execute::execute(ast, &mut turtle) {
+    match interpreter::execute::execute(ast, &mut turtle, &mut variables) {
         Ok(_) => (),
         Err(e) => {
             eprintln!("{e}");

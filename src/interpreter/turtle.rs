@@ -1,6 +1,6 @@
 use std::f32::consts::PI;
 
-use unsvg::{Color, Image, COLORS};
+use unsvg::{Image, COLORS};
 
 use crate::errors::ExtendedUnsvgError;
 
@@ -11,7 +11,7 @@ pub struct Turtle<'a> {
     pub heading: i32,
     pub pen_down: bool,
     /// Indexed into a unsvg::COLORS array.
-    pub pen_color: Color,
+    pub pen_color: usize,
     pub image: &'a mut Image,
 }
 
@@ -31,7 +31,7 @@ impl Turtle<'_> {
             });
         }
 
-        self.pen_color = COLORS[color];
+        self.pen_color = color;
         Ok(())
     }
 
@@ -117,9 +117,10 @@ impl Turtle<'_> {
     /// Encapsulate unsvg::Image::draw_simple_line to reduce duplicated code and
     /// make the code more readable.
     fn draw_simple_line(&mut self, heading: i32, distance: f32) {
+        let color = COLORS[self.pen_color];
         match self
             .image
-            .draw_simple_line(self.x, self.y, heading, distance, self.pen_color)
+            .draw_simple_line(self.x, self.y, heading, distance, color)
         {
             Ok((x, y)) => {
                 self.x = x;
