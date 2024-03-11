@@ -131,6 +131,27 @@ pub fn parse_tokens(
                     Err(e) => return Err(e),
                 };
             }
+            "ADDASSIGN" => {
+                // resulting expression should be
+                // ASTNode::Command(Command::AddAssign(var_name, expr))
+                // where expr could be a float, the variable itself or a query.
+                // for example: Expression::Float(50), Expression::Query(Query::Xcor)
+                curr_pos += 1;
+                if !tokens[curr_pos].starts_with('"') {
+                    return Err(ParseError {
+                        msg: format!("Invalid expression for ADDASSIGN: {:?}", tokens[curr_pos]),
+                    });
+                }
+                let var_name = tokens[curr_pos].trim_start_matches('"');
+
+                curr_pos += 1;
+                let expr = match_parse(&tokens, curr_pos, variables)?;
+
+                ast.push(ASTNode::Command(Command::AddAssign(
+                    var_name.to_string(),
+                    expr,
+                )));
+            }
             _ => {
                 return Err(ParseError {
                     msg: format!("Parsing error for token: {:?}", tokens[curr_pos]),
@@ -147,17 +168,9 @@ pub fn parse_tokens(
 ////////////////////////////// PARSING FUNCTIONS ///////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-/// Parse an expression from a token. An expression may be a variable, a query
-/// or a value.
+/// Matches up the token to its corresponding parsing function.
 ///
-/// If it is a variable, then it will be looked up in the variables HashMap.
-///
-/// If it is a value, then it will be parsed into a f32.
-///
-/// If it is a query, then it will be parsed into a f32.
-
-/// Matches up the token to its corresponding parsing function. This is
-/// necessary because the token may be a variable, a query or a value which
+/// This is necessary because the token may be a variable, a query or a value which
 /// all need to be parsed differently.
 fn match_parse(
     tokens: &[&str],
@@ -173,8 +186,9 @@ fn match_parse(
     }
 }
 
-/// Parse an expression from a token. This expression will always result in
-/// a f32 value.
+/// Parse an expression from a token.
+///
+/// This expression will always result in a f32 value.
 fn parse_expression(tokens: &[&str], pos: usize) -> Result<f32, ParseError> {
     if tokens[pos].starts_with('"') {
         tokens[pos]
@@ -190,8 +204,8 @@ fn parse_expression(tokens: &[&str], pos: usize) -> Result<f32, ParseError> {
     }
 }
 
-/// Parse a query from a token. A query is a special type of expression that
-/// returns a value from the turtle state.
+/// Parse a query from a token.
+/// A query is a special type of expression that returns a value from the turtle state.
 fn parse_query(tokens: &[&str], pos: usize) -> Result<Query, ParseError> {
     let query = match tokens[pos] {
         "XCOR" => Query::XCor,

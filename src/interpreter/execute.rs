@@ -7,6 +7,7 @@ use super::turtle::Turtle;
 
 /// Execute instructions in the AST on the turtle to draw an image.
 pub fn execute(ast: Vec<ASTNode>, turtle: &mut Turtle) -> Result<(), ExecutionError> {
+    println!("ast: {:#?}", ast);
     for node in ast {
         match node {
             ASTNode::Command(command) => match command {
@@ -101,6 +102,9 @@ pub fn execute(ast: Vec<ASTNode>, turtle: &mut Turtle) -> Result<(), ExecutionEr
                 Command::Make(_, _) => {
                     // This is not implemented since `Make` is handled in the
                     // parser. See `parser::parse::parse_tokens`.
+                    unimplemented!()
+                }
+                Command::AddAssign(var, expr) => {
                     unimplemented!()
                 }
             },

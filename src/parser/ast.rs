@@ -12,6 +12,7 @@ pub enum Expression {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub enum Command {
     Forward(Expression),
     Back(Expression),
@@ -25,6 +26,7 @@ pub enum Command {
     SetX(Expression),
     SetY(Expression),
     Make(String, Expression),
+    AddAssign(String, Expression),
 }
 
 #[derive(Debug, Clone)]
