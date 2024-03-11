@@ -24,6 +24,8 @@ pub fn execute(
                         turtle.forward(dist);
                     } else if let Expression::Query(query) = dist {
                         turtle.forward(match_queries(query, turtle));
+                    } else if let Expression::Variable(var) = dist {
+                        turtle.forward(extract_variable_value(&var, variables)?);
                     } else {
                         return Err(ExecutionError {
                             msg: format!("Forward distance must be a float. {:?}", dist),
@@ -35,6 +37,8 @@ pub fn execute(
                         turtle.back(dist);
                     } else if let Expression::Query(query) = dist {
                         turtle.back(match_queries(query, turtle));
+                    } else if let Expression::Variable(var) = dist {
+                        turtle.back(extract_variable_value(&var, variables)?);
                     } else {
                         return Err(ExecutionError {
                             msg: format!("Back distance must be a float. {:?}", dist),
@@ -46,6 +50,8 @@ pub fn execute(
                         turtle.left(dist);
                     } else if let Expression::Query(query) = dist {
                         turtle.left(match_queries(query, turtle));
+                    } else if let Expression::Variable(var) = dist {
+                        turtle.left(extract_variable_value(&var, variables)?);
                     } else {
                         return Err(ExecutionError {
                             msg: format!("Left distance must be a float. {:?}", dist),
@@ -57,6 +63,8 @@ pub fn execute(
                         turtle.right(dist);
                     } else if let Expression::Query(query) = expr {
                         turtle.right(match_queries(query, turtle));
+                    } else if let Expression::Variable(var) = expr {
+                        turtle.right(extract_variable_value(&var, variables)?);
                     } else {
                         return Err(ExecutionError {
                             msg: format!("Right distance must be a float. {:?}", expr),
@@ -68,6 +76,12 @@ pub fn execute(
                         turtle.set_pen_color(color).map_err(|e| ExecutionError {
                             msg: format!("Set pen color is invalid. {}", e),
                         })?;
+                    } else if let Expression::Variable(var) = expr {
+                        turtle
+                            .set_pen_color(extract_variable_value(&var, variables)? as usize)
+                            .map_err(|e| ExecutionError {
+                                msg: format!("Set pen color is invalid. {}", e),
+                            })?;
                     } else {
                         return Err(ExecutionError {
                             msg: format!("Set pen color must be a usize. {:?}", expr),
@@ -79,6 +93,8 @@ pub fn execute(
                         turtle.turn(degrees);
                     } else if let Expression::Query(query) = expr {
                         turtle.turn(match_queries(query, turtle) as i32);
+                    } else if let Expression::Variable(var) = expr {
+                        turtle.turn(extract_variable_value(&var, variables)? as i32);
                     } else {
                         return Err(ExecutionError {
                             msg: format!("Turn must be of type i32. {:?}", expr),
@@ -90,6 +106,8 @@ pub fn execute(
                         turtle.set_heading(degrees);
                     } else if let Expression::Query(query) = expr {
                         turtle.set_heading(match_queries(query, turtle) as i32);
+                    } else if let Expression::Variable(var) = expr {
+                        turtle.set_heading(extract_variable_value(&var, variables)? as i32);
                     } else {
                         return Err(ExecutionError {
                             msg: format!("Set heading must be of type i32. {:?}", expr),
@@ -99,6 +117,10 @@ pub fn execute(
                 Command::SetX(expr) => {
                     if let Expression::Float(x) = expr {
                         turtle.set_x(x);
+                    } else if let Expression::Query(query) = expr {
+                        turtle.set_x(match_queries(query, turtle));
+                    } else if let Expression::Variable(var) = expr {
+                        turtle.set_x(extract_variable_value(&var, variables)?);
                     } else {
                         return Err(ExecutionError {
                             msg: format!("Set x must be a float. {:?}", expr),
@@ -108,6 +130,10 @@ pub fn execute(
                 Command::SetY(expr) => {
                     if let Expression::Float(y) = expr {
                         turtle.set_y(y);
+                    } else if let Expression::Query(query) = expr {
+                        turtle.set_y(match_queries(query, turtle));
+                    } else if let Expression::Variable(var) = expr {
+                        turtle.set_y(extract_variable_value(&var, variables)?);
                     } else {
                         return Err(ExecutionError {
                             msg: format!("Set y must be a float. {:?}", expr),
@@ -138,6 +164,23 @@ pub fn execute(
                         });
                     }
                 }
+                Command::AddAssign(var, expr) => {
+                    let val = match expr {
+                        Expression::Float(val) => val,
+                        Expression::Number(val) => val as f32,
+                        Expression::Usize(val) => val as f32,
+                        Expression::Variable(var) => extract_variable_value(&var, variables)?,
+                        Expression::Query(query) => match_queries(query, turtle),
+                    };
+
+                    if let Some(Expression::Float(curr_val)) = variables.get(&var) {
+                        variables.insert(var, Expression::Float(curr_val + val));
+                    } else {
+                        return Err(ExecutionError {
+                            msg: format!("Variable {} does not exist.", var),
+                        });
+                    }
+                }
             },
         }
     }
@@ -154,5 +197,21 @@ fn match_queries(query: Query, turtle: &Turtle) -> f32 {
         Query::YCor => turtle.y,
         Query::Heading => turtle.heading as f32,
         Query::Color => turtle.pen_color as f32,
+    }
+}
+
+/// Helper function to extract the value of a variable from the `variables` hashmap.
+///
+/// Primarily used in the `execute` function to reduce duplicated code.
+fn extract_variable_value(
+    var: &str,
+    variables: &HashMap<String, Expression>,
+) -> Result<f32, ExecutionError> {
+    if let Some(Expression::Float(val)) = variables.get(var) {
+        Ok(*val)
+    } else {
+        Err(ExecutionError {
+            msg: format!("Variable {} does not exist.", var),
+        })
     }
 }

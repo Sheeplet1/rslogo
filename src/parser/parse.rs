@@ -152,30 +152,30 @@ pub fn parse_tokens(
                     Err(e) => return Err(e),
                 };
             }
-            // "ADDASSIGN" => {
-            //     // ADDASSIGN can only work on variables
-            //     curr_pos += 1;
-            //     if !tokens[curr_pos].starts_with('"') {
-            //         return Err(ParseError {
-            //             msg: format!("Invalid expression for ADDASSIGN: {:?}\nExpressions for ADDASSIGN should start with \"", tokens[curr_pos]),
-            //         });
-            //     }
-            //     let var_name = tokens[curr_pos].trim_start_matches('"');
-            //
-            //     if !variables.contains_key(var_name) {
-            //         return Err(ParseError {
-            //             msg: format!("Variable not found for ADDASSIGN: {:?}", var_name),
-            //         });
-            //     }
-            //
-            //     curr_pos += 1;
-            //     let expr = match_parse(&tokens, curr_pos, variables)?;
-            //
-            //     ast.push(ASTNode::Command(Command::AddAssign(
-            //         var_name.to_string(),
-            //         expr,
-            //     )));
-            // }
+            "ADDASSIGN" => {
+                // ADDASSIGN can only work on variables
+                curr_pos += 1;
+                if !tokens[curr_pos].starts_with('"') {
+                    return Err(ParseError {
+                        msg: format!("Invalid expression for ADDASSIGN: {:?}\nExpressions for ADDASSIGN should start with \"", tokens[curr_pos]),
+                    });
+                }
+                let var_name = tokens[curr_pos].trim_start_matches('"');
+
+                if !variables.contains_key(var_name) {
+                    return Err(ParseError {
+                        msg: format!("Variable not found for ADDASSIGN: {:?}", var_name),
+                    });
+                }
+
+                curr_pos += 1;
+                let expr = match_parse(&tokens, curr_pos, variables)?;
+
+                ast.push(ASTNode::Command(Command::AddAssign(
+                    var_name.to_string(),
+                    expr,
+                )));
+            }
             _ => {
                 return Err(ParseError {
                     msg: format!("Parsing error for token: {:?}", tokens[curr_pos]),
@@ -201,10 +201,25 @@ fn match_parse(
     pos: usize,
     variables: &HashMap<String, Expression>,
 ) -> Result<Expression, ParseError> {
-    if tokens[pos].starts_with(':') {
-        parse_variable(tokens, pos, variables)
-    } else if tokens[pos].starts_with('"') {
+    // if tokens[pos].starts_with(':') {
+    //     parse_variable(tokens, pos, variables)
+    // } else if tokens[pos].starts_with('"') {
+    //     parse_expression(tokens, pos).map(Expression::Float)
+    // } else {
+    //     parse_query(tokens, pos).map(Expression::Query)
+    // }
+
+    if tokens[pos].starts_with('"') {
         parse_expression(tokens, pos).map(Expression::Float)
+    } else if tokens[pos].starts_with(':') {
+        let token = tokens[pos].trim_start_matches(':');
+        if variables.contains_key(token) {
+            Ok(Expression::Variable(token.to_string()))
+        } else {
+            Err(ParseError {
+                msg: format!("Variable not found: {:?}", tokens[pos]),
+            })
+        }
     } else {
         parse_query(tokens, pos).map(Expression::Query)
     }
@@ -245,18 +260,18 @@ fn parse_query(tokens: &[&str], pos: usize) -> Result<Query, ParseError> {
     Ok(query)
 }
 
-/// Parses a stored variable from a token to its corresponding expression.
-fn parse_variable(
-    tokens: &[&str],
-    pos: usize,
-    variables: &HashMap<String, Expression>,
-) -> Result<Expression, ParseError> {
-    let var_name = tokens[pos].trim_start_matches(':');
-    // variables { x: Query(Xcor), y: Query(Ycor), distance: Expression::Float(50),  }
-    match variables.get(var_name) {
-        Some(expr) => Ok(expr.clone()),
-        None => Err(ParseError {
-            msg: format!("Variable not found: {:?}", var_name),
-        }),
-    }
-}
+// Parses a stored variable from a token to its corresponding expression.
+// fn parse_variable(
+//     tokens: &[&str],
+//     pos: usize,
+//     variables: &HashMap<String, Expression>,
+// ) -> Result<Expression, ParseError> {
+//     let var_name = tokens[pos].trim_start_matches(':');
+//     // variables { x: Query(Xcor), y: Query(Ycor), distance: Expression::Float(50),  }
+//     match variables.get(var_name) {
+//         Some(expr) => Ok(expr.clone()),
+//         None => Err(ParseError {
+//             msg: format!("Variable not found: {:?}", var_name),
+//         }),
+//     }
+// }
