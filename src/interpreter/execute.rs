@@ -23,20 +23,7 @@ pub fn execute(
                     if let Expression::Float(dist) = dist {
                         turtle.forward(dist);
                     } else if let Expression::Query(query) = dist {
-                        match query {
-                            Query::XCor => {
-                                turtle.forward(turtle.x);
-                            }
-                            Query::YCor => {
-                                turtle.forward(turtle.y);
-                            }
-                            Query::Heading => {
-                                turtle.forward(turtle.heading as f32);
-                            }
-                            Query::Color => {
-                                turtle.forward(turtle.pen_color as f32);
-                            }
-                        }
+                        turtle.forward(match_queries(query, turtle));
                     } else {
                         return Err(ExecutionError {
                             msg: "Forward distance must be a float.".to_string(),
@@ -47,23 +34,9 @@ pub fn execute(
                     if let Expression::Float(dist) = dist {
                         turtle.back(dist);
                     } else if let Expression::Query(query) = dist {
-                        match query {
-                            Query::XCor => {
-                                turtle.back(turtle.x);
-                            }
-                            Query::YCor => {
-                                turtle.back(turtle.y);
-                            }
-                            Query::Heading => {
-                                turtle.back(turtle.heading as f32);
-                            }
-                            Query::Color => {
-                                turtle.back(turtle.pen_color as f32);
-                            }
-                        }
+                        turtle.back(match_queries(query, turtle));
                     } else {
                         return Err(ExecutionError {
-                            // msg: "Back distance must be a float".to_string(),
                             msg: format!("Back distance must be a float. {:?}", dist),
                         });
                     }
@@ -72,20 +45,7 @@ pub fn execute(
                     if let Expression::Float(dist) = dist {
                         turtle.left(dist);
                     } else if let Expression::Query(query) = dist {
-                        match query {
-                            Query::XCor => {
-                                turtle.left(turtle.x);
-                            }
-                            Query::YCor => {
-                                turtle.left(turtle.y);
-                            }
-                            Query::Heading => {
-                                turtle.left(turtle.heading as f32);
-                            }
-                            Query::Color => {
-                                turtle.left(turtle.pen_color as f32);
-                            }
-                        }
+                        turtle.left(match_queries(query, turtle));
                     } else {
                         return Err(ExecutionError {
                             msg: format!("Left distance must be a float. {:?}", dist),
@@ -95,6 +55,8 @@ pub fn execute(
                 Command::Right(expr) => {
                     if let Expression::Float(dist) = expr {
                         turtle.right(dist);
+                    } else if let Expression::Query(query) = expr {
+                        turtle.right(match_queries(query, turtle));
                     } else {
                         return Err(ExecutionError {
                             msg: "Right distance must be a float.".to_string(),
@@ -116,16 +78,7 @@ pub fn execute(
                     if let Expression::Number(degrees) = expr {
                         turtle.turn(degrees);
                     } else if let Expression::Query(query) = expr {
-                        match query {
-                            Query::Heading => {
-                                turtle.turn(turtle.heading);
-                            }
-                            _ => {
-                                return Err(ExecutionError {
-                                    msg: "Invalid query for TURN command.".to_string(),
-                                });
-                            }
-                        }
+                        turtle.turn(match_queries(query, turtle) as i32);
                     } else {
                         return Err(ExecutionError {
                             msg: "Turn degrees must be of type i32.".to_string(),
@@ -135,6 +88,8 @@ pub fn execute(
                 Command::SetHeading(expr) => {
                     if let Expression::Number(degrees) = expr {
                         turtle.set_heading(degrees);
+                    } else if let Expression::Query(query) = expr {
+                        turtle.set_heading(match_queries(query, turtle) as i32);
                     } else {
                         return Err(ExecutionError {
                             msg: "Set heading degrees must of type i32.".to_string(),
@@ -182,36 +137,22 @@ pub fn execute(
                             msg: "Invalid expression for MAKE command.".to_string(),
                         });
                     }
-                    // if let Expression::Float(val) = expr {
-                    //     variables.insert(var, expr);
-                    // } else if Expression::Query(query) = expr {
-                    //     match query {
-                    //         Query::XCor => {
-                    //             let x = turtle.x;
-                    //             variables.insert(var, Expression::Float(x));
-                    //         }
-                    //         Query::YCor => {
-                    //             let y = turtle.y;
-                    //             variables.insert(var, Expression::Float(y));
-                    //         }
-                    //         Query::Heading => {
-                    //             let heading = turtle.heading;
-                    //             variables.insert(var, Expression::Number(heading));
-                    //         }
-                    //         Query::Color => {
-                    //             let color = turtle.pen_color;
-                    //             variables.insert(var, Expression::Float(color as f32));
-                    //         }
-                    //     }
-                    // } else {
-                    //     return Err(ExecutionError {
-                    //         msg: "Invalid expression for MAKE command.".to_string(),
-                    //     });
-                    // }
                 }
             },
         }
     }
 
     Ok(())
+}
+
+/// Helper function to match queries to turtle's state.
+///
+/// Primarily used in the `execute` function to reduce duplicated code.
+fn match_queries(query: Query, turtle: &Turtle) -> f32 {
+    match query {
+        Query::XCor => turtle.x,
+        Query::YCor => turtle.y,
+        Query::Heading => turtle.heading as f32,
+        Query::Color => turtle.pen_color as f32,
+    }
 }

@@ -59,6 +59,9 @@ pub fn parse_tokens(
             "SETHEADING" => {
                 curr_pos += 1;
                 let expr = match_parse(&tokens, curr_pos, variables)?;
+
+                // Because all expressions are parsed as floats, we need to convert
+                // the float to an i32 for the SETHEADING command.
                 match expr {
                     Expression::Float(val) => ast.push(ASTNode::Command(Command::SetHeading(
                         Expression::Number(val as i32),
@@ -83,6 +86,9 @@ pub fn parse_tokens(
             "SETPENCOLOR" => {
                 curr_pos += 1;
                 let expr = match_parse(&tokens, curr_pos, variables)?;
+
+                // Because all expressions are parsed as floats, we need to convert
+                // the float to an usize for the SETPENCOLOR command.
                 match expr {
                     Expression::Float(val) => ast.push(ASTNode::Command(Command::SetPenColor(
                         Expression::Usize(val as usize),
@@ -97,6 +103,9 @@ pub fn parse_tokens(
             "TURN" => {
                 curr_pos += 1;
                 let expr = match_parse(&tokens, curr_pos, variables)?;
+
+                // Because all expressions are parsed as floats, we need to convert
+                // the float to an i32 for the TURN command.
                 match expr {
                     Expression::Float(val) => ast.push(ASTNode::Command(Command::Turn(
                         Expression::Number(val as i32),
