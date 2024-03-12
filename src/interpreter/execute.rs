@@ -180,7 +180,7 @@ pub fn execute(
                         variables.insert(var, Expression::Float(curr_val + val));
                     } else {
                         return Err(ExecutionError {
-                            msg: format!("Variable {} does not exist.", var),
+                            msg: format!("Variable {} does not exist. Consider constructing the variable with MAKE first.", var),
                         });
                     }
                 }
@@ -218,7 +218,10 @@ fn extract_variable_value(
         Ok(*val)
     } else {
         Err(ExecutionError {
-            msg: format!("Variable {} does not exist.", var),
+            msg: format!(
+                "Variable {} does not exist. Consider constructing the variable with MAKE first.",
+                var
+            ),
         })
     }
 }

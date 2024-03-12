@@ -107,9 +107,15 @@ pub fn parse_tokens(
                     Expression::Variable(var) => ast.push(ASTNode::Command(Command::SetHeading(
                         Expression::Variable(var),
                     ))),
+                    Expression::Query(query) => ast.push(ASTNode::Command(Command::SetHeading(
+                        Expression::Query(query),
+                    ))),
                     _ => {
                         return Err(ParseError {
-                            msg: format!("Parsing error for SETHEADING: {:?}", tokens[curr_pos]),
+                            msg: format!(
+                                "Failed to parse expression for SETHEADING: {:?}",
+                                tokens[curr_pos]
+                            ),
                         });
                     }
                 }
@@ -137,10 +143,13 @@ pub fn parse_tokens(
                     Expression::Variable(var) => ast.push(ASTNode::Command(Command::SetPenColor(
                         Expression::Variable(var),
                     ))),
+                    Expression::Query(query) => ast.push(ASTNode::Command(Command::SetPenColor(
+                        Expression::Query(query),
+                    ))),
                     _ => {
                         return Err(ParseError {
                             msg: format!(
-                                "Could not parse value for SETPENCOLOR: {:?}",
+                                "Failed to parse value for SETPENCOLOR: {:?}",
                                 tokens[curr_pos]
                             ),
                         });
@@ -160,9 +169,12 @@ pub fn parse_tokens(
                     Expression::Variable(var) => {
                         ast.push(ASTNode::Command(Command::Turn(Expression::Variable(var))))
                     }
+                    Expression::Query(query) => {
+                        ast.push(ASTNode::Command(Command::Turn(Expression::Query(query))))
+                    }
                     _ => {
                         return Err(ParseError {
-                            msg: format!("Parsing error for TURN: {:?}", tokens[curr_pos]),
+                            msg: format!("Failed to parse value for TURN: {:?}", tokens[curr_pos]),
                         });
                     }
                 }
@@ -185,7 +197,7 @@ pub fn parse_tokens(
                         "COLOR" => Query::Color,
                         _ => {
                             return Err(ParseError {
-                                msg: format!("Invalid query expression: {:?}", token),
+                                msg: format!("Invalid query expression provided: {:?}", token),
                             });
                         }
                     };
@@ -228,7 +240,10 @@ pub fn parse_tokens(
             }
             _ => {
                 return Err(ParseError {
-                    msg: format!("Parsing error for token: {:?}", tokens[curr_pos]),
+                    msg: format!(
+                        "Failed to parse expression for ADDASSIGN: {:?}",
+                        tokens[curr_pos]
+                    ),
                 });
             }
         }
@@ -269,7 +284,10 @@ fn match_parse(
             Ok(Expression::Variable(token.to_string()))
         } else {
             Err(ParseError {
-                msg: format!("Variable not found: {:?}", tokens[pos]),
+                msg: format!(
+                    "Variable not found: {:?}, you may have forgotten to MAKE it.",
+                    tokens[pos]
+                ),
             })
         }
     } else {
@@ -298,7 +316,7 @@ fn parse_expression(tokens: &[&str], pos: usize) -> Result<f32, ParseError> {
             })
     } else {
         Err(ParseError {
-            msg: format!("Cannot parse invalid expression: {:?}", tokens[pos]),
+            msg: format!("Cannot parse an invalid expression: {:?}", tokens[pos]),
         })
     }
 }
@@ -321,7 +339,7 @@ fn parse_query(tokens: &[&str], pos: usize) -> Result<Query, ParseError> {
         "COLOR" => Query::Color,
         _ => {
             return Err(ParseError {
-                msg: format!("Invalid query expression: {:?}", tokens[pos]),
+                msg: format!("Failed to parse this query expression: {:?}", tokens[pos]),
             });
         }
     };
