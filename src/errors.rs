@@ -1,3 +1,13 @@
+//! # Errors
+//!
+//! This module contains the error types used in the library.
+//! The error types are used to represent the different types of errors that can occur during the execution of the library.
+//!
+//! The error types are:
+//! - `ParseError`: Represents an error that occurs during parsing.
+//! - `ExtendedUnsvgError`: Represents an error that occurs during usage of the unsvg library.
+//! - `ExecutionError`: Represents an error that occurs during the execution of the library.
+
 pub struct ParseError {
     pub msg: String,
     // pub line: usize,

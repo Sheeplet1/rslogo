@@ -1,3 +1,6 @@
+//! Handles the execution of the parsed AST and draws the image using the
+//! turtle.
+
 use std::collections::HashMap;
 
 use crate::{
@@ -7,7 +10,7 @@ use crate::{
 
 use super::turtle::Turtle;
 
-/// Execute instructions in the AST on the turtle to draw an image.
+/// Executes the parsed AST and draws on the image using the turtle.
 pub fn execute(
     ast: Vec<ASTNode>,
     turtle: &mut Turtle,
@@ -187,6 +190,10 @@ pub fn execute(
 
     Ok(())
 }
+
+////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////// HELPER FUNCTIONS ///////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 /// Helper function to match queries to turtle's state.
 ///

@@ -1,3 +1,30 @@
+//! This module contains the Turtle struct and its implementation. The Turtle
+//! struct is used to represent the turtle in the Logo programming language.
+//!
+//! The turtle is used to draw lines on the screen, and the turtle's state
+//! (position, heading, pen state, etc.) is modified by the Logo commands.
+//!
+//! # Example
+//! The turtle follows the below default state:
+//!
+//! ```rust
+//! use unsvg::Image;
+//!
+//! let width: f32 = 100.0;
+//! let height: f32 = 100.0;
+//!
+//! let mut image = Image::new(width, height);
+//!
+//! let mut turtle = Turtle {
+//!    x: (width / 2),
+//!    y: (height / 2),
+//!    heading: 0,
+//!    pen_down: false,
+//!    pen_color: 7, // White
+//!    image: &mut image,
+//! }
+//! ```
+
 use std::f32::consts::PI;
 
 use unsvg::{Image, COLORS};

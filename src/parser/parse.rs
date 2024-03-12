@@ -1,11 +1,34 @@
+//! Handles parsing the Logo script into an Abstract Syntax Tree (AST).
+//!
+//! The Logo script is tokenised into a vector of tokens, which are then parsed
+//! into ASTNode and Expression types. The ASTNode type is used to represent the
+//! Abstract Syntax Tree (AST) of the Logo script, and the Expression type is
+//! used to represent the different types of expressions that can be parsed from
+//! the Logo script, such as floats, numbers, queries, and variables.
+
 use std::collections::HashMap;
 
 use crate::{errors::ParseError, parser::ast::Query};
 
 use super::{ast::ASTNode, ast::Command, ast::Expression};
 
-/// Tokenise the lg script into a vector of tokens. Each token is an instruction
+/// Tokenises an Logo script into a vector of tokens. Each token is an instruction
 /// or value.
+///
+/// # Examples
+///
+/// Consider the Logo script:
+/// ```Logo
+/// PENDOWN
+///
+/// SETPENCOLOR "1
+/// FORWARD "100
+/// ```
+///
+/// Tokenising this script would result in the following vector:
+/// ```rust
+/// vec!["PENDOWN", "SETPENCOLOR" "\"1", "FORWARD" "\"100"]
+/// ````
 pub fn tokenize_script(contents: &str) -> Vec<&str> {
     let tokens: Vec<&str> = contents
         .lines()
@@ -21,6 +44,21 @@ pub fn tokenize_script(contents: &str) -> Vec<&str> {
 }
 
 /// Parse tokens into an Abstract Syntax Tree (AST).
+///
+/// # Examples
+///
+/// ```rust
+/// use std::collections::HashMap;
+///
+/// // Tokens is generated from the tokenize_script function.
+/// tokens = vec!["PENDOWN", "FORWARD", "\"100"]
+///
+/// let mut variables: HashMap<String, Expression> = HashMap::new();
+/// let ast = parse_tokens(tokens, &mut variables)?;
+///
+/// assert_eq!(ast, vec![ASTNode::Command(Command::PenDown),
+///         ASTNode::Command(Command::Forward(Expression::Float(100.0)))]);
+/// ```
 pub fn parse_tokens(
     tokens: Vec<&str>,
     variables: &mut HashMap<String, Expression>,
@@ -66,6 +104,9 @@ pub fn parse_tokens(
                     Expression::Float(val) => ast.push(ASTNode::Command(Command::SetHeading(
                         Expression::Number(val as i32),
                     ))),
+                    Expression::Variable(var) => ast.push(ASTNode::Command(Command::SetHeading(
+                        Expression::Variable(var),
+                    ))),
                     _ => {
                         return Err(ParseError {
                             msg: format!("Parsing error for SETHEADING: {:?}", tokens[curr_pos]),
@@ -93,9 +134,15 @@ pub fn parse_tokens(
                     Expression::Float(val) => ast.push(ASTNode::Command(Command::SetPenColor(
                         Expression::Usize(val as usize),
                     ))),
+                    Expression::Variable(var) => ast.push(ASTNode::Command(Command::SetPenColor(
+                        Expression::Variable(var),
+                    ))),
                     _ => {
                         return Err(ParseError {
-                            msg: format!("Parsing error for SETPENCOLOR: {:?}", tokens[curr_pos]),
+                            msg: format!(
+                                "Could not parse value for SETPENCOLOR: {:?}",
+                                tokens[curr_pos]
+                            ),
                         });
                     }
                 }
@@ -110,6 +157,9 @@ pub fn parse_tokens(
                     Expression::Float(val) => ast.push(ASTNode::Command(Command::Turn(
                         Expression::Number(val as i32),
                     ))),
+                    Expression::Variable(var) => {
+                        ast.push(ASTNode::Command(Command::Turn(Expression::Variable(var))))
+                    }
                     _ => {
                         return Err(ParseError {
                             msg: format!("Parsing error for TURN: {:?}", tokens[curr_pos]),
@@ -196,19 +246,21 @@ pub fn parse_tokens(
 ///
 /// This is necessary because the token may be a variable, a query or a value which
 /// all need to be parsed differently.
+///
+/// # Example
+///
+/// ```rust
+/// use std::collections::HashMap;
+///
+/// let tokens = vec!["\"100"];
+/// let expr = match_parse(&tokens, 0, &HashMap::new());
+/// assert_eq!(expr, Ok(Expression::Float(100.0)));
+/// ```
 fn match_parse(
     tokens: &[&str],
     pos: usize,
     variables: &HashMap<String, Expression>,
 ) -> Result<Expression, ParseError> {
-    // if tokens[pos].starts_with(':') {
-    //     parse_variable(tokens, pos, variables)
-    // } else if tokens[pos].starts_with('"') {
-    //     parse_expression(tokens, pos).map(Expression::Float)
-    // } else {
-    //     parse_query(tokens, pos).map(Expression::Query)
-    // }
-
     if tokens[pos].starts_with('"') {
         parse_expression(tokens, pos).map(Expression::Float)
     } else if tokens[pos].starts_with(':') {
@@ -228,6 +280,14 @@ fn match_parse(
 /// Parse an expression from a token.
 ///
 /// This expression will always result in a f32 value.
+///
+/// # Example
+///
+/// ```rust
+/// let tokens = vec!["\"100"];
+/// let expr = parse_expression(&tokens, 0);
+/// assert_eq!(expr, Ok(100.0));
+/// ```
 fn parse_expression(tokens: &[&str], pos: usize) -> Result<f32, ParseError> {
     if tokens[pos].starts_with('"') {
         tokens[pos]
@@ -245,6 +305,14 @@ fn parse_expression(tokens: &[&str], pos: usize) -> Result<f32, ParseError> {
 
 /// Parse a query from a token.
 /// A query is a special type of expression that returns a value from the turtle state.
+///
+/// # Example
+///
+/// ```rust
+/// let tokens = vec!["XCOR"];
+/// let query = parse_query(&tokens, 0);
+/// assert_eq!(query, Ok(Query::XCor));
+/// ```
 fn parse_query(tokens: &[&str], pos: usize) -> Result<Query, ParseError> {
     let query = match tokens[pos] {
         "XCOR" => Query::XCor,
@@ -259,19 +327,3 @@ fn parse_query(tokens: &[&str], pos: usize) -> Result<Query, ParseError> {
     };
     Ok(query)
 }
-
-// Parses a stored variable from a token to its corresponding expression.
-// fn parse_variable(
-//     tokens: &[&str],
-//     pos: usize,
-//     variables: &HashMap<String, Expression>,
-// ) -> Result<Expression, ParseError> {
-//     let var_name = tokens[pos].trim_start_matches(':');
-//     // variables { x: Query(Xcor), y: Query(Ycor), distance: Expression::Float(50),  }
-//     match variables.get(var_name) {
-//         Some(expr) => Ok(expr.clone()),
-//         None => Err(ParseError {
-//             msg: format!("Variable not found: {:?}", var_name),
-//         }),
-//     }
-// }

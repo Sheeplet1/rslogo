@@ -1,3 +1,16 @@
+//! # rslogo
+//!
+//! A simple Logo interpreter which produces the subsequent SVG images.
+//!
+//! # Example
+//! ```shell
+//! cargo run <path_to_lg_file> <path_to_image> <height> <width>
+//!
+//! cargo run examples/flower.lg examples/flower.svg 1000 1000
+//! ```
+//! This will run the program with the file `examples/flower.lg` and output
+//! the image to `examples/flower.svg` with a height and width of 1000.
+
 pub mod errors;
 mod interpreter;
 mod parser;

@@ -1,3 +1,5 @@
+//! Representation of the Logo script as an Abstract Syntax Tree (AST).
+
 #[derive(Debug)]
 pub enum ASTNode {
     Command(Command),
