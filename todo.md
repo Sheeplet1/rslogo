@@ -4,25 +4,24 @@
 
 - [ ] IF Command
 
-Problem here is the recursion in parsing the command block.
-We need to keep track of our current position in the `tokens` vector.
-
-Problem is with initialising AST in the `parse_tokens` function, I believe we
-should move this outside of the scope, initialise it there and then pass it
-in as a mutable parameter.
-
-`parse_tokens` constructs an AST and returns it as a vector.
-Initialise AST outside of scope
-Pass in AST as a parameter
-Fill out AST using
-
-1. add `curr_pos` as a parameter to `parse_tokens`
-2. Refactor `parse_tokens` return a `ASTNode` instead of a `Vec<ASTNode>`.
-
-OR
-
 Create a new function to specifically parse conditional blocks and return a
 ASTNode that way.
+
+The function will take a start and end index for `tokens` which indicate
+the start and end of the block.
+
+We will parse through that block using `parse_tokens`, but ensure to let
+the result be equal to a defined `block` variable.
+
+Now that `block` will be a vector, which we want according to how we defined
+the enums.
+
+So we can just return that and done! make sure to set curr_pos to be equal to
+the end index + 1.
+
+Execute should be relatively easy. Just keep track of the values of both
+expressions in the condition and increment/decrement accordingly. End the loop
+once done and move on.
 
 - [ ] WHILE command
 
