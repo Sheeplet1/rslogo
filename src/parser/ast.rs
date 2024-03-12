@@ -3,7 +3,7 @@
 #[derive(Debug)]
 pub enum ASTNode {
     Command(Command),
-    // ControlFlow(ControlFlow),
+    ControlFlow(ControlFlow),
 }
 
 #[derive(Debug, Clone)]
@@ -41,19 +41,21 @@ pub enum Query {
     Color,
 }
 
-// pub enum ControlFlow {
-//     If {
-//         condition: Condition,
-//         block: Vec<ASTNode>,
-//     },
-//     While {
-//         condition: Condition,
-//         block: Vec<ASTNode>,
-//     },
-// }
-//
-// pub enum Condition {
-//     Equals(Expression, Expression),
-//     LessThan(Expression, Expression),
-//     GreaterThan(Expression, Expression),
-// }
+#[derive(Debug)]
+pub enum ControlFlow {
+    If {
+        condition: Condition,
+        block: Vec<ASTNode>,
+    },
+    While {
+        condition: Condition,
+        block: Vec<ASTNode>,
+    },
+}
+
+#[derive(Debug)]
+pub enum Condition {
+    Equals(Expression, Expression),
+    LessThan(Expression, Expression),
+    GreaterThan(Expression, Expression),
+}

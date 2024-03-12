@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 use crate::{
     errors::ExecutionError,
-    parser::ast::{ASTNode, Command, Expression, Query},
+    parser::ast::{ASTNode, Command, ControlFlow, Expression, Query},
 };
 
 use super::turtle::Turtle;
@@ -183,6 +183,14 @@ pub fn execute(
                             msg: format!("Variable {} does not exist. Consider constructing the variable with MAKE first.", var),
                         });
                     }
+                }
+            },
+            ASTNode::ControlFlow(control_flow) => match control_flow {
+                ControlFlow::If { condition, block } => {
+                    todo!()
+                }
+                ControlFlow::While { condition, block } => {
+                    todo!()
                 }
             },
         }

@@ -240,10 +240,7 @@ pub fn parse_tokens(
             }
             _ => {
                 return Err(ParseError {
-                    msg: format!(
-                        "Failed to parse expression for ADDASSIGN: {:?}",
-                        tokens[curr_pos]
-                    ),
+                    msg: format!("Failed to parse expression: {:?}", tokens[curr_pos]),
                 });
             }
         }
@@ -344,4 +341,19 @@ fn parse_query(tokens: &[&str], pos: usize) -> Result<Query, ParseError> {
         }
     };
     Ok(query)
+}
+
+fn parse_conditional_blocks(
+    tokens: &[&str],
+    start: usize,
+    end: usize,
+) -> Result<Vec<ASTNode>, ParseError> {
+    // We find the starting and ending indexes of the conditional block and parse.
+    // This way our curr_pos can be updated to the end of the conditional block beforehand
+    // and we avoid duplicates.
+    //
+    // These conditional blocks can then be parsed into ASTNodes which will be
+    // returned back to the parse_tokens function, and subsequently pushed into
+    // the AST and executed.
+    todo!()
 }
