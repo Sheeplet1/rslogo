@@ -135,13 +135,7 @@ pub fn execute(
                     }
                 }
                 Command::AddAssign(var, expr) => {
-                    let val = match expr {
-                        Expression::Float(val) => val,
-                        Expression::Number(val) => val as f32,
-                        Expression::Usize(val) => val as f32,
-                        Expression::Variable(var) => extract_variable_value(&var, variables)?,
-                        Expression::Query(query) => match_queries(query, turtle),
-                    };
+                    let val = match_expressions(expr.clone(), variables, turtle);
 
                     if let Some(Expression::Float(curr_val)) = variables.get(&var) {
                         variables.insert(var, Expression::Float(curr_val + val));
