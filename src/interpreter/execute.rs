@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 use crate::{
     errors::ExecutionError,
-    parser::ast::{ASTNode, Command, ControlFlow, Expression, Query},
+    parser::ast::{ASTNode, Command, Condition, ControlFlow, Expression, Query},
 };
 
 use super::turtle::Turtle;
@@ -22,128 +22,91 @@ pub fn execute(
             ASTNode::Command(command) => match command {
                 Command::PenDown => turtle.pen_down(),
                 Command::PenUp => turtle.pen_up(),
-                Command::Forward(dist) => {
-                    if let Expression::Float(dist) = dist {
-                        turtle.forward(dist);
-                    } else if let Expression::Query(query) = dist {
-                        turtle.forward(match_queries(query, turtle));
-                    } else if let Expression::Variable(var) = dist {
-                        turtle.forward(extract_variable_value(&var, variables)?);
-                    } else {
+                Command::Forward(expr) => {
+                    let dist = match_expressions(expr.clone(), variables, turtle);
+                    if dist.is_nan() {
                         return Err(ExecutionError {
-                            msg: format!("Forward distance must be a float. {:?}", dist),
+                            msg: format!("Forward distance must be a float. {:?}", expr),
                         });
                     }
+                    turtle.forward(dist);
                 }
-                Command::Back(dist) => {
-                    if let Expression::Float(dist) = dist {
-                        turtle.back(dist);
-                    } else if let Expression::Query(query) = dist {
-                        turtle.back(match_queries(query, turtle));
-                    } else if let Expression::Variable(var) = dist {
-                        turtle.back(extract_variable_value(&var, variables)?);
-                    } else {
+                Command::Back(expr) => {
+                    let dist = match_expressions(expr.clone(), variables, turtle);
+                    if dist.is_nan() {
                         return Err(ExecutionError {
-                            msg: format!("Back distance must be a float. {:?}", dist),
+                            msg: format!("Back distance must be a float. {:?}", expr),
                         });
                     }
+                    turtle.back(dist);
                 }
-                Command::Left(dist) => {
-                    if let Expression::Float(dist) = dist {
-                        turtle.left(dist);
-                    } else if let Expression::Query(query) = dist {
-                        turtle.left(match_queries(query, turtle));
-                    } else if let Expression::Variable(var) = dist {
-                        turtle.left(extract_variable_value(&var, variables)?);
-                    } else {
+                Command::Left(expr) => {
+                    let dist = match_expressions(expr.clone(), variables, turtle);
+                    if dist.is_nan() {
                         return Err(ExecutionError {
-                            msg: format!("Left distance must be a float. {:?}", dist),
+                            msg: format!("Left distance must be a float. {:?}", expr),
                         });
                     }
+                    turtle.left(dist);
                 }
                 Command::Right(expr) => {
-                    if let Expression::Float(dist) = expr {
-                        turtle.right(dist);
-                    } else if let Expression::Query(query) = expr {
-                        turtle.right(match_queries(query, turtle));
-                    } else if let Expression::Variable(var) = expr {
-                        turtle.right(extract_variable_value(&var, variables)?);
-                    } else {
+                    let dist = match_expressions(expr.clone(), variables, turtle);
+                    if dist.is_nan() {
                         return Err(ExecutionError {
                             msg: format!("Right distance must be a float. {:?}", expr),
                         });
                     }
+                    turtle.right(dist);
                 }
                 Command::SetPenColor(expr) => {
-                    if let Expression::Usize(color) = expr {
-                        turtle.set_pen_color(color).map_err(|e| ExecutionError {
-                            msg: format!("Set pen color is invalid. {}", e),
-                        })?;
-                    } else if let Expression::Variable(var) = expr {
-                        turtle
-                            .set_pen_color(extract_variable_value(&var, variables)? as usize)
-                            .map_err(|e| ExecutionError {
-                                msg: format!("Set pen color is invalid. {}", e),
-                            })?;
-                    } else {
+                    let color = match_expressions(expr.clone(), variables, turtle);
+                    if color.is_nan() {
                         return Err(ExecutionError {
-                            msg: format!("Set pen color must be a usize. {:?}", expr),
+                            msg: format!("Set pen color must be an usize. {:?}", expr),
                         });
                     }
+                    turtle
+                        .set_pen_color(color as usize)
+                        .map_err(|e| ExecutionError { msg: e.to_string() })?;
                 }
                 Command::Turn(expr) => {
-                    if let Expression::Number(degrees) = expr {
-                        turtle.turn(degrees);
-                    } else if let Expression::Query(query) = expr {
-                        turtle.turn(match_queries(query, turtle) as i32);
-                    } else if let Expression::Variable(var) = expr {
-                        turtle.turn(extract_variable_value(&var, variables)? as i32);
-                    } else {
+                    let degrees = match_expressions(expr.clone(), variables, turtle);
+                    if degrees.is_nan() {
                         return Err(ExecutionError {
-                            msg: format!("Turn must be of type i32. {:?}", expr),
+                            msg: format!("Turn degrees must be an i32. {:?}", expr),
                         });
                     }
+                    turtle.turn(degrees as i32);
                 }
                 Command::SetHeading(expr) => {
-                    if let Expression::Number(degrees) = expr {
-                        turtle.set_heading(degrees);
-                    } else if let Expression::Query(query) = expr {
-                        turtle.set_heading(match_queries(query, turtle) as i32);
-                    } else if let Expression::Variable(var) = expr {
-                        turtle.set_heading(extract_variable_value(&var, variables)? as i32);
-                    } else {
+                    let degrees = match_expressions(expr.clone(), variables, turtle);
+                    if degrees.is_nan() {
                         return Err(ExecutionError {
-                            msg: format!("Set heading must be of type i32. {:?}", expr),
+                            msg: format!("Set heading degrees must be an i32. {:?}", expr),
                         });
                     }
+                    turtle.set_heading(degrees as i32);
                 }
                 Command::SetX(expr) => {
-                    if let Expression::Float(x) = expr {
-                        turtle.set_x(x);
-                    } else if let Expression::Query(query) = expr {
-                        turtle.set_x(match_queries(query, turtle));
-                    } else if let Expression::Variable(var) = expr {
-                        turtle.set_x(extract_variable_value(&var, variables)?);
-                    } else {
+                    let x = match_expressions(expr.clone(), variables, turtle);
+                    if x.is_nan() {
                         return Err(ExecutionError {
                             msg: format!("Set x must be a float. {:?}", expr),
                         });
                     }
+                    turtle.set_x(x);
                 }
                 Command::SetY(expr) => {
-                    if let Expression::Float(y) = expr {
-                        turtle.set_y(y);
-                    } else if let Expression::Query(query) = expr {
-                        turtle.set_y(match_queries(query, turtle));
-                    } else if let Expression::Variable(var) = expr {
-                        turtle.set_y(extract_variable_value(&var, variables)?);
-                    } else {
+                    let y = match_expressions(expr.clone(), variables, turtle);
+                    if y.is_nan() {
                         return Err(ExecutionError {
                             msg: format!("Set y must be a float. {:?}", expr),
                         });
                     }
+                    turtle.set_y(y);
                 }
                 Command::Make(var, expr) => {
+                    // TODO: Refactor this
                     if let Expression::Query(query) = expr {
                         match query {
                             Query::XCor => {
@@ -160,6 +123,10 @@ pub fn execute(
                             }
                         }
                     } else if let Expression::Float(_) = expr {
+                        variables.insert(var, expr);
+                    } else if let Expression::Number(_) = expr {
+                        variables.insert(var, expr);
+                    } else if let Expression::Usize(_) = expr {
                         variables.insert(var, expr);
                     } else {
                         return Err(ExecutionError {
@@ -187,7 +154,10 @@ pub fn execute(
             },
             ASTNode::ControlFlow(control_flow) => match control_flow {
                 ControlFlow::If { condition, block } => {
-                    todo!()
+                    // condition: Expression: Query | Float | Number | Usize | Variable
+                    // block: Vec<ASTNode>
+                    // helper function to evaluate conditions and execute the block
+                    eval_and_exec_block(condition, block, turtle, variables)?;
                 }
                 ControlFlow::While { condition, block } => {
                     todo!()
@@ -215,6 +185,21 @@ fn match_queries(query: Query, turtle: &Turtle) -> f32 {
     }
 }
 
+/// Helper function to match expressions to their values.
+fn match_expressions(
+    expr: Expression,
+    variables: &HashMap<String, Expression>,
+    turtle: &Turtle,
+) -> f32 {
+    match expr {
+        Expression::Float(val) => val,
+        Expression::Number(val) => val as f32,
+        Expression::Usize(val) => val as f32,
+        Expression::Query(query) => match_queries(query, turtle),
+        Expression::Variable(var) => extract_variable_value(&var, variables).unwrap(),
+    }
+}
+
 /// Helper function to extract the value of a variable from the `variables` hashmap.
 ///
 /// Primarily used in the `execute` function to reduce duplicated code.
@@ -232,4 +217,41 @@ fn extract_variable_value(
             ),
         })
     }
+}
+
+/// Helper function to evaluate conditions and execute the block.
+fn eval_and_exec_block(
+    condition: Condition,
+    block: Vec<ASTNode>,
+    turtle: &mut Turtle,
+    variables: &mut HashMap<String, Expression>,
+) -> Result<(), ExecutionError> {
+    let (val_1, val_2) = match condition {
+        Condition::Equals(lhs, rhs) => {
+            let lhs = match_expressions(lhs, variables, turtle);
+            let rhs = match_expressions(rhs, variables, turtle);
+
+            (lhs, rhs)
+        }
+        Condition::LessThan(lhs, rhs) => {
+            let lhs = match_expressions(lhs, variables, turtle);
+            let rhs = match_expressions(rhs, variables, turtle);
+
+            (lhs, rhs)
+        }
+        Condition::GreaterThan(lhs, rhs) => {
+            let lhs = match_expressions(lhs, variables, turtle);
+            let rhs = match_expressions(rhs, variables, turtle);
+
+            (lhs, rhs)
+        }
+    };
+
+    println!("val_1: {}, val_2: {}", val_1, val_2);
+    if val_1 == val_2 {
+        println!("Condition is true. Executing block.");
+        execute(block, turtle, variables)?;
+    }
+
+    Ok(())
 }
