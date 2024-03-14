@@ -8,9 +8,16 @@
 
 use std::collections::HashMap;
 
-use crate::{errors::ParseError, parser::ast::Query};
+use crate::{
+    errors::ParseError,
+    parser::ast::{ControlFlow, Query},
+};
 
-use super::{ast::ASTNode, ast::Command, ast::Expression};
+use super::{
+    ast::ASTNode,
+    ast::Expression,
+    ast::{Command, Condition},
+};
 
 /// Tokenises an Logo script into a vector of tokens. Each token is an instruction
 /// or value.
@@ -238,6 +245,26 @@ pub fn parse_tokens(
                     expr,
                 )));
             }
+            "IF" => {
+                curr_pos += 1; // Skip the IF token
+                let condition = parse_conditions(&tokens, &mut curr_pos, variables)?;
+                let block = parse_conditional_blocks(&tokens, &mut curr_pos, variables)?;
+                ast.push(ASTNode::ControlFlow(ControlFlow::If { condition, block }));
+            }
+            "WHILE" => {
+                curr_pos += 1; // Skip the WHILE token
+                let condition = parse_conditions(&tokens, &mut curr_pos, variables)?;
+                let block = parse_conditional_blocks(&tokens, &mut curr_pos, variables)?;
+                ast.push(ASTNode::ControlFlow(ControlFlow::While {
+                    condition,
+                    block,
+                }));
+            }
+            "]" => {
+                // This is the end of a conditional block, we can skip this token
+                // and return the ast directly.
+                return Ok(ast);
+            }
             _ => {
                 return Err(ParseError {
                     msg: format!("Failed to parse expression: {:?}", tokens[curr_pos]),
@@ -266,6 +293,7 @@ pub fn parse_tokens(
 ///
 /// let tokens = vec!["\"100"];
 /// let expr = match_parse(&tokens, 0, &HashMap::new());
+///
 /// assert_eq!(expr, Ok(Expression::Float(100.0)));
 /// ```
 fn match_parse(
@@ -301,6 +329,7 @@ fn match_parse(
 /// ```rust
 /// let tokens = vec!["\"100"];
 /// let expr = parse_expression(&tokens, 0);
+///
 /// assert_eq!(expr, Ok(100.0));
 /// ```
 fn parse_expression(tokens: &[&str], pos: usize) -> Result<f32, ParseError> {
@@ -326,6 +355,7 @@ fn parse_expression(tokens: &[&str], pos: usize) -> Result<f32, ParseError> {
 /// ```rust
 /// let tokens = vec!["XCOR"];
 /// let query = parse_query(&tokens, 0);
+///
 /// assert_eq!(query, Ok(Query::XCor));
 /// ```
 fn parse_query(tokens: &[&str], pos: usize) -> Result<Query, ParseError> {
@@ -343,17 +373,95 @@ fn parse_query(tokens: &[&str], pos: usize) -> Result<Query, ParseError> {
     Ok(query)
 }
 
+/// Parse the conditions and expressions for the control flow statements.
+///
+/// # Example
+/// ```rust
+/// use std::collections::HashMap;
+/// let mut variables: HashMap<String, Expression> = HashMap::new();
+/// let tokens = vec!["EQ", "\"100", "\"100"];
+///
+/// let condition = parse_conditions(&tokens, &mut 0, &variables);
+///
+/// assert_eq!(condition, Ok(Condition::Equals(Expression::Float(100.0), Expression::Float(100.0))));
+/// ```
+fn parse_conditions(
+    tokens: &[&str],
+    curr_pos: &mut usize,
+    variables: &HashMap<String, Expression>,
+) -> Result<Condition, ParseError> {
+    // Conditions will usually be in the form of:
+    // <operator> <expression> <expression>
+
+    let condition_idx = *curr_pos;
+
+    *curr_pos += 1;
+    let expr_1 = match_parse(tokens, *curr_pos, variables)?;
+    *curr_pos += 1;
+    let expr_2 = match_parse(tokens, *curr_pos, variables)?;
+    *curr_pos += 1;
+
+    let condition = match tokens[condition_idx] {
+        "EQ" => Condition::Equals(expr_1, expr_2),
+        "LT" => Condition::LessThan(expr_1, expr_2),
+        "GT" => Condition::GreaterThan(expr_1, expr_2),
+        _ => {
+            return Err(ParseError {
+                msg: format!("Invalid condition operator: {:?}", tokens[condition_idx]),
+            });
+        }
+    };
+
+    Ok(condition)
+}
+
+/// Parses the conditional blocks for the control flow statements (IF/WHILE)
+/// into a vector of ASTNodes.
+///
+/// # Example
+/// ```rust
+/// use std::collections::HashMap;
+/// let mut variables: HashMap<String, Expression> = HashMap::new();
+///
+/// let tokens = vec!["[", "PENDOWN", "FORWARD", "\"100", "]"];
+/// let mut curr_pos = 0;
+///
+/// let block = parse_conditional_blocks(&tokens, &mut curr_pos, &mut variables);
+/// assert_eq!(block, Ok(vec![ASTNode::Command(Command::PenDown),
+///        ASTNode::Command(Command::Forward(Expression::Float(100.0)))]));
+/// ```
 fn parse_conditional_blocks(
     tokens: &[&str],
-    start: usize,
-    end: usize,
+    curr_pos: &mut usize,
+    variables: &mut HashMap<String, Expression>,
 ) -> Result<Vec<ASTNode>, ParseError> {
-    // We find the starting and ending indexes of the conditional block and parse.
-    // This way our curr_pos can be updated to the end of the conditional block beforehand
-    // and we avoid duplicates.
-    //
-    // These conditional blocks can then be parsed into ASTNodes which will be
-    // returned back to the parse_tokens function, and subsequently pushed into
-    // the AST and executed.
-    todo!()
+    if tokens[*curr_pos] != "[" {
+        return Err(ParseError {
+            msg: format!(
+                "Expected start of a conditional block: {:?}",
+                tokens[*curr_pos]
+            ),
+        });
+    }
+    *curr_pos += 1; // skipping '['
+
+    let mut block: Vec<ASTNode> = Vec::new();
+
+    let ast = parse_tokens(tokens[*curr_pos..].to_vec(), variables)?;
+    block.extend(ast);
+
+    // NOTE: Hack to get curr_pos to end of the conditional block since
+    // parse_tokens does not direcly update curr_pos.
+    // TODO: Refactor parse_tokens to include curr_pos as a parameter.
+    while tokens[*curr_pos] != "]" && *curr_pos < tokens.len() {
+        *curr_pos += 1;
+    }
+
+    if tokens[*curr_pos] != "]" {
+        return Err(ParseError {
+            msg: format!("Failed to parse conditional block: {:?}", tokens[*curr_pos]),
+        });
+    }
+
+    Ok(block)
 }

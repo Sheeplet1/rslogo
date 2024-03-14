@@ -16,7 +16,7 @@ pub fn execute(
     turtle: &mut Turtle,
     variables: &mut HashMap<String, Expression>,
 ) -> Result<(), ExecutionError> {
-    // println!("ast: {:#?}", ast);
+    println!("ast: {:#?}", ast);
     for node in ast {
         match node {
             ASTNode::Command(command) => match command {
