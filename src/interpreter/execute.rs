@@ -187,17 +187,12 @@ fn match_expressions(
         Expression::Number(val) => val as f32,
         Expression::Usize(val) => val as f32,
         Expression::Query(query) => match_queries(query, turtle),
-        Expression::Variable(var) => extract_variable_value(&var, variables).unwrap(),
+        Expression::Variable(var) => get_value(&var, variables).unwrap(),
     }
 }
 
-/// Helper function to extract the value of a variable from the `variables` hashmap.
-///
-/// Primarily used in the `execute` function to reduce duplicated code.
-fn extract_variable_value(
-    var: &str,
-    variables: &HashMap<String, Expression>,
-) -> Result<f32, ExecutionError> {
+/// Helper function to get the value of a variable.
+fn get_value(var: &str, variables: &HashMap<String, Expression>) -> Result<f32, ExecutionError> {
     if let Some(Expression::Float(val)) = variables.get(var) {
         Ok(*val)
     } else {
@@ -239,4 +234,13 @@ fn eval_and_exec_if_block(
     }
 
     Ok(())
+}
+
+fn eval_and_exec_while_block(
+    condition: Condition,
+    block: Vec<ASTNode>,
+    turtle: &mut Turtle,
+    variables: &HashMap<String, Expression>,
+) -> Result<(), ExecutionError> {
+    todo!()
 }

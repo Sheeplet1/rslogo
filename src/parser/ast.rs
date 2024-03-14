@@ -1,6 +1,6 @@
 //! Representation of the Logo script as an Abstract Syntax Tree (AST).
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ASTNode {
     Command(Command),
     ControlFlow(ControlFlow),
@@ -16,7 +16,6 @@ pub enum Expression {
 }
 
 #[derive(Debug, Clone)]
-#[allow(dead_code)]
 pub enum Command {
     Forward(Expression),
     Back(Expression),
@@ -41,7 +40,7 @@ pub enum Query {
     Color,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ControlFlow {
     If {
         condition: Condition,
@@ -53,7 +52,7 @@ pub enum ControlFlow {
     },
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Condition {
     Equals(Expression, Expression),
     LessThan(Expression, Expression),
