@@ -148,10 +148,7 @@ pub fn execute(
             },
             ASTNode::ControlFlow(control_flow) => match control_flow {
                 ControlFlow::If { condition, block } => {
-                    // condition: Expression: Query | Float | Number | Usize | Variable
-                    // block: Vec<ASTNode>
-                    // helper function to evaluate conditions and execute the block
-                    eval_and_exec_block(condition, block, turtle, variables)?;
+                    eval_and_exec_if_block(condition, block, turtle, variables)?;
                 }
                 ControlFlow::While { condition, block } => {
                     todo!()
@@ -214,36 +211,30 @@ fn extract_variable_value(
 }
 
 /// Helper function to evaluate conditions and execute the block.
-fn eval_and_exec_block(
+fn eval_and_exec_if_block(
     condition: Condition,
     block: Vec<ASTNode>,
     turtle: &mut Turtle,
     variables: &mut HashMap<String, Expression>,
 ) -> Result<(), ExecutionError> {
-    let (val_1, val_2) = match condition {
-        Condition::Equals(lhs, rhs) => {
-            let lhs = match_expressions(lhs, variables, turtle);
-            let rhs = match_expressions(rhs, variables, turtle);
+    // TODO: Refactor to include while block
 
-            (lhs, rhs)
-        }
-        Condition::LessThan(lhs, rhs) => {
-            let lhs = match_expressions(lhs, variables, turtle);
-            let rhs = match_expressions(rhs, variables, turtle);
-
-            (lhs, rhs)
-        }
-        Condition::GreaterThan(lhs, rhs) => {
-            let lhs = match_expressions(lhs, variables, turtle);
-            let rhs = match_expressions(rhs, variables, turtle);
-
-            (lhs, rhs)
-        }
+    let eval_and_compare = |lhs: &Expression,
+                            rhs: &Expression,
+                            comparator: fn(f32, f32) -> bool|
+     -> Result<bool, ExecutionError> {
+        let lhs_val = match_expressions(lhs.clone(), variables, turtle);
+        let rhs_val = match_expressions(rhs.clone(), variables, turtle);
+        Ok(comparator(lhs_val, rhs_val))
     };
 
-    println!("val_1: {}, val_2: {}", val_1, val_2);
-    if val_1 == val_2 {
-        println!("Condition is true. Executing block.");
+    let should_execute = match condition {
+        Condition::Equals(lhs, rhs) => eval_and_compare(&lhs, &rhs, |a, b| a == b)?,
+        Condition::LessThan(lhs, rhs) => eval_and_compare(&lhs, &rhs, |a, b| a < b)?,
+        Condition::GreaterThan(lhs, rhs) => eval_and_compare(&lhs, &rhs, |a, b| a > b)?,
+    };
+
+    if should_execute {
         execute(block, turtle, variables)?;
     }
 

@@ -105,7 +105,7 @@ impl Turtle<'_> {
 
     /// Turtle controls for going left
     pub fn left(&mut self, distance: f32) {
-        let temp_heading = &self.heading - 90;
+        let temp_heading = (&self.heading - 90) % 360;
         let radians = self.convert_degree_to_radians(temp_heading);
 
         let dx = distance * radians.sin();
@@ -114,14 +114,14 @@ impl Turtle<'_> {
         if self.pen_down {
             self.draw_simple_line(temp_heading, distance)
         } else {
-            self.x -= dx;
-            self.y -= dy;
+            self.x += dx;
+            self.y += dy;
         }
     }
 
     /// Turtle controls for going right
     pub fn right(&mut self, distance: f32) {
-        let temp_heading = &self.heading + 90;
+        let temp_heading = (&self.heading + 90) % 360;
         let radians = self.convert_degree_to_radians(temp_heading);
 
         let dx = distance * radians.sin();
@@ -130,8 +130,8 @@ impl Turtle<'_> {
         if self.pen_down {
             self.draw_simple_line(temp_heading, distance)
         } else {
-            self.x -= dx;
-            self.y -= dy;
+            self.x += dx;
+            self.y += dy;
         }
     }
 
