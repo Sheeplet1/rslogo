@@ -12,18 +12,18 @@ use super::turtle::Turtle;
 
 /// Executes the parsed AST and draws on the image using the turtle.
 pub fn execute(
-    ast: Vec<ASTNode>,
+    ast: &Vec<ASTNode>,
     turtle: &mut Turtle,
     variables: &mut HashMap<String, Expression>,
 ) -> Result<(), ExecutionError> {
-    println!("ast: {:#?}", ast);
+    // println!("ast: {:#?}", ast);
     for node in ast {
         match node {
             ASTNode::Command(command) => match command {
                 Command::PenDown => turtle.pen_down(),
                 Command::PenUp => turtle.pen_up(),
                 Command::Forward(expr) => {
-                    let dist = match_expressions(expr.clone(), variables, turtle);
+                    let dist = match_expressions(expr, variables, turtle);
                     if dist.is_nan() {
                         return Err(ExecutionError {
                             msg: format!("Forward distance must be a float. {:?}", expr),
@@ -32,7 +32,7 @@ pub fn execute(
                     turtle.forward(dist);
                 }
                 Command::Back(expr) => {
-                    let dist = match_expressions(expr.clone(), variables, turtle);
+                    let dist = match_expressions(expr, variables, turtle);
                     if dist.is_nan() {
                         return Err(ExecutionError {
                             msg: format!("Back distance must be a float. {:?}", expr),
@@ -41,7 +41,7 @@ pub fn execute(
                     turtle.back(dist);
                 }
                 Command::Left(expr) => {
-                    let dist = match_expressions(expr.clone(), variables, turtle);
+                    let dist = match_expressions(expr, variables, turtle);
                     if dist.is_nan() {
                         return Err(ExecutionError {
                             msg: format!("Left distance must be a float. {:?}", expr),
@@ -50,7 +50,7 @@ pub fn execute(
                     turtle.left(dist);
                 }
                 Command::Right(expr) => {
-                    let dist = match_expressions(expr.clone(), variables, turtle);
+                    let dist = match_expressions(expr, variables, turtle);
                     if dist.is_nan() {
                         return Err(ExecutionError {
                             msg: format!("Right distance must be a float. {:?}", expr),
@@ -59,7 +59,7 @@ pub fn execute(
                     turtle.right(dist);
                 }
                 Command::SetPenColor(expr) => {
-                    let color = match_expressions(expr.clone(), variables, turtle);
+                    let color = match_expressions(expr, variables, turtle);
                     if color.is_nan() {
                         return Err(ExecutionError {
                             msg: format!("Set pen color must be an usize. {:?}", expr),
@@ -70,7 +70,7 @@ pub fn execute(
                         .map_err(|e| ExecutionError { msg: e.to_string() })?;
                 }
                 Command::Turn(expr) => {
-                    let degrees = match_expressions(expr.clone(), variables, turtle);
+                    let degrees = match_expressions(expr, variables, turtle);
                     if degrees.is_nan() {
                         return Err(ExecutionError {
                             msg: format!("Turn degrees must be an i32. {:?}", expr),
@@ -79,7 +79,7 @@ pub fn execute(
                     turtle.turn(degrees as i32);
                 }
                 Command::SetHeading(expr) => {
-                    let degrees = match_expressions(expr.clone(), variables, turtle);
+                    let degrees = match_expressions(expr, variables, turtle);
                     if degrees.is_nan() {
                         return Err(ExecutionError {
                             msg: format!("Set heading degrees must be an i32. {:?}", expr),
@@ -88,7 +88,7 @@ pub fn execute(
                     turtle.set_heading(degrees as i32);
                 }
                 Command::SetX(expr) => {
-                    let x = match_expressions(expr.clone(), variables, turtle);
+                    let x = match_expressions(expr, variables, turtle);
                     if x.is_nan() {
                         return Err(ExecutionError {
                             msg: format!("Set x must be a float. {:?}", expr),
@@ -97,7 +97,7 @@ pub fn execute(
                     turtle.set_x(x);
                 }
                 Command::SetY(expr) => {
-                    let y = match_expressions(expr.clone(), variables, turtle);
+                    let y = match_expressions(expr, variables, turtle);
                     if y.is_nan() {
                         return Err(ExecutionError {
                             msg: format!("Set y must be a float. {:?}", expr),
@@ -107,6 +107,7 @@ pub fn execute(
                 }
                 Command::Make(var, expr) => {
                     // TODO: Refactor this
+                    let var = var.to_string();
                     if let Expression::Query(query) = expr {
                         match query {
                             Query::XCor => {
@@ -123,11 +124,11 @@ pub fn execute(
                             }
                         }
                     } else if let Expression::Float(_) = expr {
-                        variables.insert(var, expr);
+                        variables.insert(var.clone(), expr.clone());
                     } else if let Expression::Number(_) = expr {
-                        variables.insert(var, expr);
+                        variables.insert(var.clone(), expr.clone());
                     } else if let Expression::Usize(_) = expr {
-                        variables.insert(var, expr);
+                        variables.insert(var.clone(), expr.clone());
                     } else {
                         return Err(ExecutionError {
                             msg: format!("Make expression must be a float or a query. {:?}", expr),
@@ -135,10 +136,10 @@ pub fn execute(
                     }
                 }
                 Command::AddAssign(var, expr) => {
-                    let val = match_expressions(expr.clone(), variables, turtle);
+                    let val = match_expressions(expr, variables, turtle);
 
-                    if let Some(Expression::Float(curr_val)) = variables.get(&var) {
-                        variables.insert(var, Expression::Float(curr_val + val));
+                    if let Some(Expression::Float(curr_val)) = variables.get(var) {
+                        variables.insert(var.to_string(), Expression::Float(curr_val + val));
                     } else {
                         return Err(ExecutionError {
                             msg: format!("Variable {} does not exist. Consider constructing the variable with MAKE first.", var),
@@ -148,10 +149,10 @@ pub fn execute(
             },
             ASTNode::ControlFlow(control_flow) => match control_flow {
                 ControlFlow::If { condition, block } => {
-                    eval_and_exec_if_block(condition, block, turtle, variables)?;
+                    eval_exec_if(condition, block, turtle, variables)?;
                 }
                 ControlFlow::While { condition, block } => {
-                    todo!()
+                    eval_exec_while(condition, block, turtle, variables)?;
                 }
             },
         }
@@ -167,7 +168,7 @@ pub fn execute(
 /// Helper function to match queries to turtle's state.
 ///
 /// Primarily used in the `execute` function to reduce duplicated code.
-fn match_queries(query: Query, turtle: &Turtle) -> f32 {
+fn match_queries(query: &Query, turtle: &Turtle) -> f32 {
     match query {
         Query::XCor => turtle.x,
         Query::YCor => turtle.y,
@@ -178,16 +179,16 @@ fn match_queries(query: Query, turtle: &Turtle) -> f32 {
 
 /// Helper function to match expressions to their values.
 fn match_expressions(
-    expr: Expression,
+    expr: &Expression,
     variables: &HashMap<String, Expression>,
     turtle: &Turtle,
 ) -> f32 {
     match expr {
-        Expression::Float(val) => val,
-        Expression::Number(val) => val as f32,
-        Expression::Usize(val) => val as f32,
+        Expression::Float(val) => *val,
+        Expression::Number(val) => *val as f32,
+        Expression::Usize(val) => *val as f32,
         Expression::Query(query) => match_queries(query, turtle),
-        Expression::Variable(var) => get_value(&var, variables).unwrap(),
+        Expression::Variable(var) => get_value(var, variables).unwrap(),
     }
 }
 
@@ -205,28 +206,29 @@ fn get_value(var: &str, variables: &HashMap<String, Expression>) -> Result<f32, 
     }
 }
 
+fn comparator(
+    lhs: &Expression,
+    rhs: &Expression,
+    comparator: fn(f32, f32) -> bool,
+    turtle: &Turtle,
+    variables: &HashMap<String, Expression>,
+) -> Result<bool, ExecutionError> {
+    let lhs_val = match_expressions(lhs, variables, turtle);
+    let rhs_val = match_expressions(rhs, variables, turtle);
+    Ok(comparator(lhs_val, rhs_val))
+}
+
 /// Helper function to evaluate conditions and execute the block.
-fn eval_and_exec_if_block(
-    condition: Condition,
-    block: Vec<ASTNode>,
+fn eval_exec_if(
+    condition: &Condition,
+    block: &Vec<ASTNode>,
     turtle: &mut Turtle,
     variables: &mut HashMap<String, Expression>,
 ) -> Result<(), ExecutionError> {
-    // TODO: Refactor to include while block
-
-    let eval_and_compare = |lhs: &Expression,
-                            rhs: &Expression,
-                            comparator: fn(f32, f32) -> bool|
-     -> Result<bool, ExecutionError> {
-        let lhs_val = match_expressions(lhs.clone(), variables, turtle);
-        let rhs_val = match_expressions(rhs.clone(), variables, turtle);
-        Ok(comparator(lhs_val, rhs_val))
-    };
-
     let should_execute = match condition {
-        Condition::Equals(lhs, rhs) => eval_and_compare(&lhs, &rhs, |a, b| a == b)?,
-        Condition::LessThan(lhs, rhs) => eval_and_compare(&lhs, &rhs, |a, b| a < b)?,
-        Condition::GreaterThan(lhs, rhs) => eval_and_compare(&lhs, &rhs, |a, b| a > b)?,
+        Condition::Equals(lhs, rhs) => comparator(lhs, rhs, |a, b| a == b, turtle, variables)?,
+        Condition::LessThan(lhs, rhs) => comparator(lhs, rhs, |a, b| a < b, turtle, variables)?,
+        Condition::GreaterThan(lhs, rhs) => comparator(lhs, rhs, |a, b| a > b, turtle, variables)?,
     };
 
     if should_execute {
@@ -236,11 +238,39 @@ fn eval_and_exec_if_block(
     Ok(())
 }
 
-fn eval_and_exec_while_block(
-    condition: Condition,
-    block: Vec<ASTNode>,
+fn eval_exec_while(
+    condition: &Condition,
+    block: &Vec<ASTNode>,
     turtle: &mut Turtle,
-    variables: &HashMap<String, Expression>,
+    variables: &mut HashMap<String, Expression>,
 ) -> Result<(), ExecutionError> {
-    todo!()
+    let mut should_execute = match condition {
+        Condition::Equals(ref lhs, ref rhs) => {
+            comparator(lhs, rhs, |lhs, rhs| lhs == rhs, turtle, variables)
+        }
+        Condition::LessThan(ref lhs, ref rhs) => {
+            comparator(lhs, rhs, |lhs, rhs| lhs < rhs, turtle, variables)
+        }
+        Condition::GreaterThan(ref lhs, ref rhs) => {
+            comparator(lhs, rhs, |lhs, rhs| lhs > rhs, turtle, variables)
+        }
+    }?;
+
+    while should_execute {
+        execute(block, turtle, variables)?;
+
+        should_execute = match condition {
+            Condition::Equals(ref lhs, ref rhs) => {
+                comparator(lhs, rhs, |lhs, rhs| lhs == rhs, turtle, variables)?
+            }
+            Condition::LessThan(ref lhs, ref rhs) => {
+                comparator(lhs, rhs, |lhs, rhs| lhs < rhs, turtle, variables)?
+            }
+            Condition::GreaterThan(ref lhs, ref rhs) => {
+                comparator(lhs, rhs, |lhs, rhs| lhs > rhs, turtle, variables)?
+            }
+        };
+    }
+
+    Ok(())
 }
