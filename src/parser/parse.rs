@@ -191,25 +191,8 @@ pub fn parse_tokens(
                 let var_name = tokens[curr_pos].trim_start_matches('"');
 
                 curr_pos += 1;
-                let token = tokens[curr_pos];
-
-                // Expression may either be a float or a query.
-                let expr: Result<Expression, ParseError> = if token.starts_with('"') {
-                    parse_expression(&tokens, curr_pos).map(Expression::Float)
-                } else {
-                    let query = match token {
-                        "XCOR" => Query::XCor,
-                        "YCOR" => Query::YCor,
-                        "HEADING" => Query::Heading,
-                        "COLOR" => Query::Color,
-                        _ => {
-                            return Err(ParseError {
-                                msg: format!("Invalid query expression provided: {:?}", token),
-                            });
-                        }
-                    };
-                    Ok(Expression::Query(query))
-                };
+                let expr: Result<Expression, ParseError> =
+                    match_parse(&tokens, curr_pos, variables);
 
                 // Now that expr is of type `Expression`, we can insert it into the
                 // variables HashMap, making it easier on the execution phase.
@@ -302,7 +285,9 @@ fn match_parse(
     variables: &HashMap<String, Expression>,
 ) -> Result<Expression, ParseError> {
     if tokens[pos].starts_with('"') {
-        parse_expression(tokens, pos).map(Expression::Float)
+        parse_expression(tokens, pos)
+            .map(Expression::Float)
+            .or_else(|_| parse_bool(tokens, pos).map(Expression::Bool))
     } else if tokens[pos].starts_with(':') {
         let token = tokens[pos].trim_start_matches(':');
         if variables.contains_key(token) {
@@ -320,9 +305,27 @@ fn match_parse(
     }
 }
 
+fn parse_bool(tokens: &[&str], pos: usize) -> Result<bool, ParseError> {
+    // Check that we cannot parse it into a float
+    if tokens[pos].starts_with('"') {
+        let val = tokens[pos].trim_start_matches('"');
+        match val {
+            "TRUE" => Ok(true),
+            "FALSE" => Ok(false),
+            _ => Err(ParseError {
+                msg: format!("Failed to parse boolean: {:?}", tokens[pos]),
+            }),
+        }
+    } else {
+        Err(ParseError {
+            msg: format!("Failed to parse boolean: {:?}", tokens[pos]),
+        })
+    }
+}
+
 /// Parse an expression from a token.
 ///
-/// This expression will always result in a f32 value.
+/// This expression defaults to a f32 value.
 ///
 /// # Example
 ///
@@ -397,10 +400,11 @@ fn parse_conditions(
 
     *curr_pos += 1;
     let expr_1 = match_parse(tokens, *curr_pos, variables)?;
+
     *curr_pos += 1;
     let expr_2 = match_parse(tokens, *curr_pos, variables)?;
-    *curr_pos += 1;
 
+    *curr_pos += 1;
     let condition = match tokens[condition_idx] {
         "EQ" => Condition::Equals(expr_1, expr_2),
         "LT" => Condition::LessThan(expr_1, expr_2),

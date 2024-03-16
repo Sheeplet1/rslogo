@@ -13,6 +13,7 @@ pub enum Expression {
     Usize(usize),
     Query(Query),
     Variable(String),
+    Bool(bool),
 }
 
 #[derive(Debug, Clone)]

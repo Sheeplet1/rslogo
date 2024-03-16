@@ -61,6 +61,7 @@ fn main() -> Result<(), ()> {
         image: &mut image,
     };
 
+    // TODO: refactor unwraps to give proper error messages
     let mut variables: HashMap<String, Expression> = HashMap::new();
     let tokens = parser::parse::tokenize_script(&contents);
     let ast = parser::parse::parse_tokens(tokens, &mut variables).unwrap();
