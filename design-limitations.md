@@ -1,48 +1,29 @@
 # Design Limitations
 
-## Lack of USize expression
+## Defaulting to f32 for execution and typecasting to other types when required
 
-In my enum for `Expression`, I did not include USize. This was due to the way
-I parsed my tokens and specifically for `SetPenColor`, I had to parse it
-differently due to its parameter being of type `usize`.
+My expressions default to f32 values before being typecasted for the appropriate
+functions.
 
-Instead of converting it to a `usize` in my parser, I decided to cast it as
-`usize` during the execution phase instead which resulted in less lines of code
-and a simpler execution.
+For example, `SetPenColor` requires `usize`, before execution, this value is
+parsed as an `f32` before being typecasted to `usize`.
 
-However, if more `usize` parameters were added down the line, it would be helpful
-to readd it to `Expression`.
+Limitations of this is:
 
-See the parsing code I had for `SetPenColor` before below:
+1. Loss of precision and information between conversions which can cause
+   unexpected behaviours such as overflow, underflow, or rounding errors.
+2. Goes against Rust's type safety. My reasoning for this was to reduce
+   complexity of the code to handle different enums, however, this could also
+   be an extension of my design choices.
+3. Reduced clarity and limitations on extending functionality on other types
+   such as `i32` since they would have to be typecasted too.
 
-```
- if tokens[curr_pos].starts_with('"') {
-    let expr = parse_expression(&tokens, curr_pos)? as usize;
-    ast.push(ASTNode::Command(Command::SetPenColor(Expression::Usize(
-        expr,
-    ))));
-} else if tokens[curr_pos].starts_with(':') {
-    let expr = parse_variable(&tokens, curr_pos, variables)?;
-    match expr {
-        Expression::Float(val) => {
-            ast.push(ASTNode::Command(Command::SetPenColor(Expression::Usize(
-                val as usize,
-            ))));
-        }
-        _ => {
-            return Err(ParseError {
-                msg: format!(
-                    "Parsing error for SETPENCOLOR: {:?}",
-                    tokens[curr_pos]
-                ),
-            });
-        }
-    }
-} else {
-    let expr = parse_query(&tokens, curr_pos)?;
-    ast.push(ASTNode::Command(Command::SetPenColor(Expression::Query(
-        expr,
-    ))));
-}
+## Lack of Bools
 
-```
+My design does not implement booleans properly, instead, it evaluates booleans
+into their corresponding float values, `1.0` for `TRUE`, and `0.0` for `FALSE`.
+
+This is quite hacky but implemented this way to reduce complexity of the code due
+to time limitations and previous design choices.
+
+Previous design choices being to default all `Expression`s to `f32`.

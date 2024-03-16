@@ -285,9 +285,7 @@ fn match_parse(
     variables: &HashMap<String, Expression>,
 ) -> Result<Expression, ParseError> {
     if tokens[pos].starts_with('"') {
-        parse_expression(tokens, pos)
-            .map(Expression::Float)
-            .or_else(|_| parse_bool(tokens, pos).map(Expression::Bool))
+        parse_expression(tokens, pos).map(Expression::Float)
     } else if tokens[pos].starts_with(':') {
         let token = tokens[pos].trim_start_matches(':');
         if variables.contains_key(token) {
@@ -305,24 +303,6 @@ fn match_parse(
     }
 }
 
-fn parse_bool(tokens: &[&str], pos: usize) -> Result<bool, ParseError> {
-    // Check that we cannot parse it into a float
-    if tokens[pos].starts_with('"') {
-        let val = tokens[pos].trim_start_matches('"');
-        match val {
-            "TRUE" => Ok(true),
-            "FALSE" => Ok(false),
-            _ => Err(ParseError {
-                msg: format!("Failed to parse boolean: {:?}", tokens[pos]),
-            }),
-        }
-    } else {
-        Err(ParseError {
-            msg: format!("Failed to parse boolean: {:?}", tokens[pos]),
-        })
-    }
-}
-
 /// Parse an expression from a token.
 ///
 /// This expression defaults to a f32 value.
@@ -337,12 +317,16 @@ fn parse_bool(tokens: &[&str], pos: usize) -> Result<bool, ParseError> {
 /// ```
 fn parse_expression(tokens: &[&str], pos: usize) -> Result<f32, ParseError> {
     if tokens[pos].starts_with('"') {
-        tokens[pos]
-            .trim_start_matches('"')
-            .parse::<f32>()
-            .map_err(|_| ParseError {
+        let token = tokens[pos].trim_start_matches('"');
+        if token == "TRUE" {
+            Ok(1.0)
+        } else if token == "FALSE" {
+            Ok(0.0)
+        } else {
+            token.parse::<f32>().map_err(|_| ParseError {
                 msg: format!("Failed to parse expression: {:?}", tokens[pos]),
             })
+        }
     } else {
         Err(ParseError {
             msg: format!("Cannot parse an invalid expression: {:?}", tokens[pos]),

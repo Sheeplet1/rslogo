@@ -16,7 +16,8 @@ pub fn execute(
     turtle: &mut Turtle,
     variables: &mut HashMap<String, Expression>,
 ) -> Result<(), ExecutionError> {
-    println!("ast: {:#?}", ast);
+    // println!("///////////////////////////////////////////////////////////////");
+    // println!("ast: {:#?}", ast);
     for node in ast {
         match node {
             ASTNode::Command(command) => match command {
@@ -129,8 +130,6 @@ pub fn execute(
                         variables.insert(var.clone(), expr.clone());
                     } else if let Expression::Usize(_) = expr {
                         variables.insert(var.clone(), expr.clone());
-                    } else if let Expression::Bool(_) = expr {
-                        variables.insert(var.clone(), expr.clone());
                     } else {
                         return Err(ExecutionError {
                             msg: format!("Make expression must be a float or a query. {:?}", expr),
@@ -193,9 +192,6 @@ fn match_expressions(
         Expression::Usize(val) => Ok(*val as f32),
         Expression::Query(query) => Ok(match_queries(query, turtle)),
         Expression::Variable(var) => get_f32_value(var, variables),
-        _ => Err(ExecutionError {
-            msg: format!("Ended up in the wrong execution pathway: {:?}", expr),
-        }),
     }
 }
 
@@ -216,22 +212,7 @@ fn get_f32_value(
     }
 }
 
-fn get_bool_value(
-    var: &str,
-    variables: &HashMap<String, Expression>,
-) -> Result<bool, ExecutionError> {
-    if let Some(Expression::Bool(val)) = variables.get(var) {
-        Ok(*val)
-    } else {
-        Err(ExecutionError {
-            msg: format!(
-                "Variable {} does not exist. Consider constructing the variable with MAKE first.",
-                var
-            ),
-        })
-    }
-}
-
+// TODO: Make this comparator generic so that it can handle both f32 and bool.
 fn comparator(
     lhs: &Expression,
     rhs: &Expression,
@@ -282,7 +263,8 @@ fn eval_exec_while(
         }
     }?;
 
-    while should_execute {
+    let mut i = 0;
+    while should_execute && i <= 2 {
         execute(block, turtle, variables)?;
 
         should_execute = match condition {
@@ -296,6 +278,8 @@ fn eval_exec_while(
                 comparator(lhs, rhs, |lhs, rhs| lhs > rhs, turtle, variables)?
             }
         };
+
+        i += 1;
     }
 
     Ok(())
