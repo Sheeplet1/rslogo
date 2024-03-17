@@ -64,7 +64,7 @@ fn main() -> Result<(), ()> {
     // TODO: refactor unwraps to give proper error messages
     let mut variables: HashMap<String, Expression> = HashMap::new();
     let tokens = parser::parse::tokenize_script(&contents);
-    let ast = parser::parse::parse_tokens(tokens, &mut variables).unwrap();
+    let ast = parser::parse::parse_tokens(tokens, &mut 0, &mut variables).unwrap();
 
     match interpreter::execute::execute(&ast, &mut turtle, &mut variables) {
         Ok(_) => (),

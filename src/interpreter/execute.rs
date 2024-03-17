@@ -222,6 +222,7 @@ fn comparator(
 ) -> Result<bool, ExecutionError> {
     let lhs_val = match_expressions(lhs, variables, turtle)?;
     let rhs_val = match_expressions(rhs, variables, turtle)?;
+    println!("lhs: {:#?}, rhs: {:#?}", lhs_val, rhs_val);
     Ok(comparator(lhs_val, rhs_val))
 }
 
@@ -238,7 +239,9 @@ fn eval_exec_if(
         Condition::GreaterThan(lhs, rhs) => comparator(lhs, rhs, |a, b| a > b, turtle, variables)?,
     };
 
+    println!("condition: {:?}", condition);
     if should_execute {
+        println!("conditional block: {:#?}", block);
         execute(block, turtle, variables)?;
     }
 
@@ -263,8 +266,7 @@ fn eval_exec_while(
         }
     }?;
 
-    let mut i = 0;
-    while should_execute && i <= 2 {
+    while should_execute {
         execute(block, turtle, variables)?;
 
         should_execute = match condition {
@@ -278,8 +280,6 @@ fn eval_exec_while(
                 comparator(lhs, rhs, |lhs, rhs| lhs > rhs, turtle, variables)?
             }
         };
-
-        i += 1;
     }
 
     Ok(())

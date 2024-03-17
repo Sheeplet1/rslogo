@@ -68,13 +68,13 @@ pub fn tokenize_script(contents: &str) -> Vec<&str> {
 /// ```
 pub fn parse_tokens(
     tokens: Vec<&str>,
+    curr_pos: &mut usize,
     variables: &mut HashMap<String, Expression>,
 ) -> Result<Vec<ASTNode>, ParseError> {
     let mut ast = Vec::new();
-    let mut curr_pos = 0;
 
-    while curr_pos < tokens.len() {
-        match tokens[curr_pos] {
+    while *curr_pos < tokens.len() {
+        match tokens[*curr_pos] {
             "PENUP" => {
                 ast.push(ASTNode::Command(Command::PenUp));
             }
@@ -82,28 +82,28 @@ pub fn parse_tokens(
                 ast.push(ASTNode::Command(Command::PenDown));
             }
             "FORWARD" => {
-                curr_pos += 1;
-                let expr = match_parse(&tokens, curr_pos, variables)?;
+                *curr_pos += 1;
+                let expr = match_parse(&tokens, *curr_pos, variables)?;
                 ast.push(ASTNode::Command(Command::Forward(expr)));
             }
             "BACK" => {
-                curr_pos += 1;
-                let expr = match_parse(&tokens, curr_pos, variables)?;
+                *curr_pos += 1;
+                let expr = match_parse(&tokens, *curr_pos, variables)?;
                 ast.push(ASTNode::Command(Command::Back(expr)));
             }
             "LEFT" => {
-                curr_pos += 1;
-                let expr = match_parse(&tokens, curr_pos, variables)?;
+                *curr_pos += 1;
+                let expr = match_parse(&tokens, *curr_pos, variables)?;
                 ast.push(ASTNode::Command(Command::Left(expr)));
             }
             "RIGHT" => {
-                curr_pos += 1;
-                let expr = match_parse(&tokens, curr_pos, variables)?;
+                *curr_pos += 1;
+                let expr = match_parse(&tokens, *curr_pos, variables)?;
                 ast.push(ASTNode::Command(Command::Right(expr)));
             }
             "SETHEADING" => {
-                curr_pos += 1;
-                let expr = match_parse(&tokens, curr_pos, variables)?;
+                *curr_pos += 1;
+                let expr = match_parse(&tokens, *curr_pos, variables)?;
 
                 // Because all expressions are parsed as floats, we need to convert
                 // the float to an i32 for the SETHEADING command.
@@ -121,25 +121,25 @@ pub fn parse_tokens(
                         return Err(ParseError {
                             msg: format!(
                                 "Failed to parse expression for SETHEADING: {:?}",
-                                tokens[curr_pos]
+                                tokens[*curr_pos]
                             ),
                         });
                     }
                 }
             }
             "SETX" => {
-                curr_pos += 1;
-                let expr = match_parse(&tokens, curr_pos, variables)?;
+                *curr_pos += 1;
+                let expr = match_parse(&tokens, *curr_pos, variables)?;
                 ast.push(ASTNode::Command(Command::SetX(expr)));
             }
             "SETY" => {
-                curr_pos += 1;
-                let expr = match_parse(&tokens, curr_pos, variables)?;
+                *curr_pos += 1;
+                let expr = match_parse(&tokens, *curr_pos, variables)?;
                 ast.push(ASTNode::Command(Command::SetY(expr)));
             }
             "SETPENCOLOR" => {
-                curr_pos += 1;
-                let expr = match_parse(&tokens, curr_pos, variables)?;
+                *curr_pos += 1;
+                let expr = match_parse(&tokens, *curr_pos, variables)?;
 
                 // Because all expressions are parsed as floats, we need to convert
                 // the float to an usize for the SETPENCOLOR command.
@@ -157,15 +157,15 @@ pub fn parse_tokens(
                         return Err(ParseError {
                             msg: format!(
                                 "Failed to parse value for SETPENCOLOR: {:?}",
-                                tokens[curr_pos]
+                                tokens[*curr_pos]
                             ),
                         });
                     }
                 }
             }
             "TURN" => {
-                curr_pos += 1;
-                let expr = match_parse(&tokens, curr_pos, variables)?;
+                *curr_pos += 1;
+                let expr = match_parse(&tokens, *curr_pos, variables)?;
 
                 // Because all expressions are parsed as floats, we need to convert
                 // the float to an i32 for the TURN command.
@@ -181,18 +181,18 @@ pub fn parse_tokens(
                     }
                     _ => {
                         return Err(ParseError {
-                            msg: format!("Failed to parse value for TURN: {:?}", tokens[curr_pos]),
+                            msg: format!("Failed to parse value for TURN: {:?}", tokens[*curr_pos]),
                         });
                     }
                 }
             }
             "MAKE" => {
-                curr_pos += 1;
-                let var_name = tokens[curr_pos].trim_start_matches('"');
+                *curr_pos += 1;
+                let var_name = tokens[*curr_pos].trim_start_matches('"');
 
-                curr_pos += 1;
+                *curr_pos += 1;
                 let expr: Result<Expression, ParseError> =
-                    match_parse(&tokens, curr_pos, variables);
+                    match_parse(&tokens, *curr_pos, variables);
 
                 // Now that expr is of type `Expression`, we can insert it into the
                 // variables HashMap, making it easier on the execution phase.
@@ -206,22 +206,22 @@ pub fn parse_tokens(
             }
             "ADDASSIGN" => {
                 // ADDASSIGN can only work on variables
-                curr_pos += 1;
-                if !tokens[curr_pos].starts_with('"') {
+                *curr_pos += 1;
+                if !tokens[*curr_pos].starts_with('"') {
                     return Err(ParseError {
-                        msg: format!("Invalid expression for ADDASSIGN: {:?}\nExpressions for ADDASSIGN should start with \"", tokens[curr_pos]),
+                        msg: format!("Invalid expression for ADDASSIGN: {:?}\nExpressions for ADDASSIGN should start with \"", tokens[*curr_pos]),
                     });
                 }
-                let var_name = tokens[curr_pos].trim_start_matches('"');
 
+                let var_name = tokens[*curr_pos].trim_start_matches('"');
                 if !variables.contains_key(var_name) {
                     return Err(ParseError {
                         msg: format!("Variable not found for ADDASSIGN: {:?}", var_name),
                     });
                 }
 
-                curr_pos += 1;
-                let expr = match_parse(&tokens, curr_pos, variables)?;
+                *curr_pos += 1;
+                let expr = match_parse(&tokens, *curr_pos, variables)?;
 
                 ast.push(ASTNode::Command(Command::AddAssign(
                     var_name.to_string(),
@@ -229,15 +229,15 @@ pub fn parse_tokens(
                 )));
             }
             "IF" => {
-                curr_pos += 1; // Skip the IF token
-                let condition = parse_conditions(&tokens, &mut curr_pos, variables)?;
-                let block = parse_conditional_blocks(&tokens, &mut curr_pos, variables)?;
+                *curr_pos += 1; // Skip the IF token
+                let condition = parse_conditions(&tokens, &mut *curr_pos, variables)?;
+                let block = parse_conditional_blocks(&tokens, &mut *curr_pos, variables)?;
                 ast.push(ASTNode::ControlFlow(ControlFlow::If { condition, block }));
             }
             "WHILE" => {
-                curr_pos += 1; // Skip the WHILE token
-                let condition = parse_conditions(&tokens, &mut curr_pos, variables)?;
-                let block = parse_conditional_blocks(&tokens, &mut curr_pos, variables)?;
+                *curr_pos += 1; // Skip the WHILE token
+                let condition = parse_conditions(&tokens, &mut *curr_pos, variables)?;
+                let block = parse_conditional_blocks(&tokens, &mut *curr_pos, variables)?;
                 ast.push(ASTNode::ControlFlow(ControlFlow::While {
                     condition,
                     block,
@@ -250,11 +250,11 @@ pub fn parse_tokens(
             }
             _ => {
                 return Err(ParseError {
-                    msg: format!("Failed to parse expression: {:?}", tokens[curr_pos]),
+                    msg: format!("Failed to parse expression: {:?}", tokens[*curr_pos]),
                 });
             }
         }
-        curr_pos += 1
+        *curr_pos += 1
     }
 
     Ok(ast)
@@ -435,15 +435,24 @@ fn parse_conditional_blocks(
 
     let mut block: Vec<ASTNode> = Vec::new();
 
-    let ast = parse_tokens(tokens[*curr_pos..].to_vec(), variables)?;
-    block.extend(ast);
+    while *curr_pos < tokens.len() && tokens[*curr_pos] != "]" {
+        let ast = parse_tokens(tokens.to_vec(), curr_pos, variables)?;
+        block.extend(ast);
+    }
 
     // NOTE: Hack to get curr_pos to end of the conditional block since
     // parse_tokens does not direcly update curr_pos.
     // TODO: Refactor parse_tokens to include curr_pos as a parameter.
-    while tokens[*curr_pos] != "]" && *curr_pos < tokens.len() {
-        *curr_pos += 1;
-    }
+    // while tokens[*curr_pos] != "]" && *curr_pos < tokens.len() {
+    //     *curr_pos += 1;
+    // }
+
+    // println!(
+    //     "token at curr_pos: {:?} | curr_pos: {:?}",
+    //     tokens[*curr_pos], *curr_pos
+    // );
+
+    println!("condition block: {:?}", block);
 
     if tokens[*curr_pos] != "]" {
         return Err(ParseError {
