@@ -82,53 +82,43 @@ impl Turtle<'_> {
         self.y = y
     }
 
-    /// Move the turtle to a new position, drawing a line if the pen is down.
-    fn move_in_direction(&mut self, direction: i32, distance: f32) {
-        let direction_rad = ((direction as f32) - 90.0).to_radians();
-        let end_x = self.x + (direction_rad.cos() * distance);
-        let end_y = self.y + (direction_rad.sin() * distance);
-
-        if self.pen_down {
-            self.draw_simple_line(direction, distance);
-        } else {
-            self.x = end_x;
-            self.y = end_y;
-        }
-    }
-
     /// Turtle controls for going forwards
     pub fn forward(&mut self, distance: f32) {
-        self.move_in_direction(self.heading, distance);
+        self.move_turtle(self.heading, distance);
     }
 
     /// Turtle controls for going backwards
     pub fn back(&mut self, distance: f32) {
-        self.move_in_direction((self.heading + 180) % 360, distance);
+        self.move_turtle((self.heading + 180) % 360, distance);
     }
 
     /// Turtle controls for going left
     pub fn left(&mut self, distance: f32) {
-        self.move_in_direction((self.heading - 90) % 360, distance);
+        self.move_turtle((self.heading - 90) % 360, distance);
     }
 
     /// Turtle controls for going right
     pub fn right(&mut self, distance: f32) {
-        self.move_in_direction((self.heading + 90) % 360, distance);
+        self.move_turtle((self.heading + 90) % 360, distance);
     }
 
-    /// Encapsulate unsvg::Image::draw_simple_line to reduce duplicated code and
-    /// make the code more readable.
-    fn draw_simple_line(&mut self, heading: i32, distance: f32) {
+    fn move_turtle(&mut self, heading: i32, distance: f32) {
         let color = COLORS[self.pen_color];
-        match self
-            .image
-            .draw_simple_line(self.x, self.y, heading, distance, color)
-        {
-            Ok((x, y)) => {
-                self.x = x;
-                self.y = y;
+        if self.pen_down {
+            match self
+                .image
+                .draw_simple_line(self.x, self.y, heading, distance, color)
+            {
+                Ok((x, y)) => {
+                    self.x = x;
+                    self.y = y;
+                }
+                Err(e) => panic!("Error drawing line: {:?}", e),
             }
-            Err(e) => panic!("Error drawing line: {:?}", e),
+        } else {
+            let (end_x, end_y) = unsvg::get_end_coordinates(self.x, self.y, heading, distance);
+            self.x = end_x;
+            self.y = end_y;
         }
     }
 }
