@@ -16,8 +16,6 @@ pub fn execute(
     turtle: &mut Turtle,
     variables: &mut HashMap<String, Expression>,
 ) -> Result<(), ExecutionError> {
-    // println!("///////////////////////////////////////////////////////////////");
-    // println!("ast: {:#?}", ast);
     for node in ast {
         match node {
             ASTNode::Command(command) => match command {
@@ -195,13 +193,17 @@ fn match_expressions(
     }
 }
 
-/// Helper function to get the value of a variable.
+/// Helper function to get the value of a variable. Defaults to f32.
 fn get_f32_value(
     var: &str,
     variables: &HashMap<String, Expression>,
 ) -> Result<f32, ExecutionError> {
     if let Some(Expression::Float(val)) = variables.get(var) {
         Ok(*val)
+    } else if let Some(Expression::Number(val)) = variables.get(var) {
+        Ok(*val as f32)
+    } else if let Some(Expression::Usize(val)) = variables.get(var) {
+        Ok(*val as f32)
     } else {
         Err(ExecutionError {
             msg: format!(
@@ -222,7 +224,6 @@ fn comparator(
 ) -> Result<bool, ExecutionError> {
     let lhs_val = match_expressions(lhs, variables, turtle)?;
     let rhs_val = match_expressions(rhs, variables, turtle)?;
-    println!("lhs: {:#?}, rhs: {:#?}", lhs_val, rhs_val);
     Ok(comparator(lhs_val, rhs_val))
 }
 
@@ -239,9 +240,7 @@ fn eval_exec_if(
         Condition::GreaterThan(lhs, rhs) => comparator(lhs, rhs, |a, b| a > b, turtle, variables)?,
     };
 
-    println!("condition: {:?}", condition);
     if should_execute {
-        println!("conditional block: {:#?}", block);
         execute(block, turtle, variables)?;
     }
 

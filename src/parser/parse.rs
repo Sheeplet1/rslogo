@@ -440,20 +440,6 @@ fn parse_conditional_blocks(
         block.extend(ast);
     }
 
-    // NOTE: Hack to get curr_pos to end of the conditional block since
-    // parse_tokens does not direcly update curr_pos.
-    // TODO: Refactor parse_tokens to include curr_pos as a parameter.
-    // while tokens[*curr_pos] != "]" && *curr_pos < tokens.len() {
-    //     *curr_pos += 1;
-    // }
-
-    // println!(
-    //     "token at curr_pos: {:?} | curr_pos: {:?}",
-    //     tokens[*curr_pos], *curr_pos
-    // );
-
-    println!("condition block: {:?}", block);
-
     if tokens[*curr_pos] != "]" {
         return Err(ParseError {
             msg: format!("Failed to parse conditional block: {:?}", tokens[*curr_pos]),

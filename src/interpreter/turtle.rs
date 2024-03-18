@@ -25,8 +25,6 @@
 //! }
 //! ```
 
-use std::f32::consts::PI;
-
 use unsvg::{Image, COLORS};
 
 use crate::errors::ExtendedUnsvgError;
@@ -84,61 +82,38 @@ impl Turtle<'_> {
         self.y = y
     }
 
-    /// Turtle controls for going forwards
-    pub fn forward(&mut self, distance: f32) {
-        let radians = self.convert_degree_to_radians(self.heading);
-        let dx = distance * radians.sin();
-        let dy = distance * radians.cos();
+    /// Move the turtle to a new position, drawing a line if the pen is down.
+    fn move_in_direction(&mut self, direction: i32, distance: f32) {
+        let direction_rad = ((direction as f32) - 90.0).to_radians();
+        let end_x = self.x + (direction_rad.cos() * distance);
+        let end_y = self.y + (direction_rad.sin() * distance);
 
         if self.pen_down {
-            self.draw_simple_line(self.heading, distance);
+            self.draw_simple_line(direction, distance);
         } else {
-            self.x -= dx;
-            self.y -= dy;
+            self.x = end_x;
+            self.y = end_y;
         }
+    }
+
+    /// Turtle controls for going forwards
+    pub fn forward(&mut self, distance: f32) {
+        self.move_in_direction(self.heading, distance);
     }
 
     /// Turtle controls for going backwards
     pub fn back(&mut self, distance: f32) {
-        self.forward(-distance);
+        self.move_in_direction((self.heading + 180) % 360, distance);
     }
 
     /// Turtle controls for going left
     pub fn left(&mut self, distance: f32) {
-        let temp_heading = (&self.heading - 90) % 360;
-        let radians = self.convert_degree_to_radians(temp_heading);
-
-        let dx = distance * radians.sin();
-        let dy = distance * radians.cos();
-
-        if self.pen_down {
-            self.draw_simple_line(temp_heading, distance)
-        } else {
-            self.x += dx;
-            self.y += dy;
-        }
+        self.move_in_direction((self.heading - 90) % 360, distance);
     }
 
     /// Turtle controls for going right
     pub fn right(&mut self, distance: f32) {
-        let temp_heading = (&self.heading + 90) % 360;
-        let radians = self.convert_degree_to_radians(temp_heading);
-
-        let dx = distance * radians.sin();
-        let dy = distance * radians.cos();
-
-        if self.pen_down {
-            self.draw_simple_line(temp_heading, distance)
-        } else {
-            self.x += dx;
-            self.y += dy;
-        }
-    }
-
-    /// Converts degrees to radians. Used in calculations for distance when
-    /// heading has been changed.
-    fn convert_degree_to_radians(&mut self, heading: i32) -> f32 {
-        (heading as f32) * (PI / 180.0)
+        self.move_in_direction((self.heading + 90) % 360, distance);
     }
 
     /// Encapsulate unsvg::Image::draw_simple_line to reduce duplicated code and
