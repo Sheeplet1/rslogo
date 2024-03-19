@@ -5,10 +5,14 @@ use std::collections::HashMap;
 
 use crate::{
     errors::ExecutionError,
-    parser::ast::{ASTNode, Command, Condition, ControlFlow, Expression, Query},
+    parser::ast::{ASTNode, Command, ControlFlow, Expression, Query},
 };
 
-use super::turtle::Turtle;
+use super::{
+    control_flows::{eval_exec_if, eval_exec_while},
+    matches::match_expressions,
+    turtle::Turtle,
+};
 
 /// Executes the parsed AST and draws on the image using the turtle.
 pub fn execute(
@@ -155,130 +159,6 @@ pub fn execute(
                 }
             },
         }
-    }
-
-    Ok(())
-}
-
-////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////// HELPER FUNCTIONS ///////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
-/// Helper function to match queries to turtle's state.
-///
-/// Primarily used in the `execute` function to reduce duplicated code.
-fn match_queries(query: &Query, turtle: &Turtle) -> f32 {
-    match query {
-        Query::XCor => turtle.x,
-        Query::YCor => turtle.y,
-        Query::Heading => turtle.heading as f32,
-        Query::Color => turtle.pen_color as f32,
-    }
-}
-
-/// Helper function to match expressions to their values. This defaults for
-/// f32 values. We return an ExecutionError if the expression is not parsable
-/// as a float. This is because boolean values are handled elsewhere.
-fn match_expressions(
-    expr: &Expression,
-    variables: &HashMap<String, Expression>,
-    turtle: &Turtle,
-) -> Result<f32, ExecutionError> {
-    match expr {
-        Expression::Float(val) => Ok(*val),
-        Expression::Number(val) => Ok(*val as f32),
-        Expression::Usize(val) => Ok(*val as f32),
-        Expression::Query(query) => Ok(match_queries(query, turtle)),
-        Expression::Variable(var) => get_f32_value(var, variables),
-    }
-}
-
-/// Helper function to get the value of a variable. Defaults to f32.
-fn get_f32_value(
-    var: &str,
-    variables: &HashMap<String, Expression>,
-) -> Result<f32, ExecutionError> {
-    if let Some(Expression::Float(val)) = variables.get(var) {
-        Ok(*val)
-    } else if let Some(Expression::Number(val)) = variables.get(var) {
-        Ok(*val as f32)
-    } else if let Some(Expression::Usize(val)) = variables.get(var) {
-        Ok(*val as f32)
-    } else {
-        Err(ExecutionError {
-            msg: format!(
-                "Variable {} does not exist. Consider constructing the variable with MAKE first.",
-                var
-            ),
-        })
-    }
-}
-
-// TODO: Make this comparator generic so that it can handle both f32 and bool.
-fn comparator(
-    lhs: &Expression,
-    rhs: &Expression,
-    comparator: fn(f32, f32) -> bool,
-    turtle: &Turtle,
-    variables: &HashMap<String, Expression>,
-) -> Result<bool, ExecutionError> {
-    let lhs_val = match_expressions(lhs, variables, turtle)?;
-    let rhs_val = match_expressions(rhs, variables, turtle)?;
-    Ok(comparator(lhs_val, rhs_val))
-}
-
-/// Helper function to evaluate conditions and execute the block.
-fn eval_exec_if(
-    condition: &Condition,
-    block: &Vec<ASTNode>,
-    turtle: &mut Turtle,
-    variables: &mut HashMap<String, Expression>,
-) -> Result<(), ExecutionError> {
-    let should_execute = match condition {
-        Condition::Equals(lhs, rhs) => comparator(lhs, rhs, |a, b| a == b, turtle, variables)?,
-        Condition::LessThan(lhs, rhs) => comparator(lhs, rhs, |a, b| a < b, turtle, variables)?,
-        Condition::GreaterThan(lhs, rhs) => comparator(lhs, rhs, |a, b| a > b, turtle, variables)?,
-    };
-
-    if should_execute {
-        execute(block, turtle, variables)?;
-    }
-
-    Ok(())
-}
-
-fn eval_exec_while(
-    condition: &Condition,
-    block: &Vec<ASTNode>,
-    turtle: &mut Turtle,
-    variables: &mut HashMap<String, Expression>,
-) -> Result<(), ExecutionError> {
-    let mut should_execute = match condition {
-        Condition::Equals(ref lhs, ref rhs) => {
-            comparator(lhs, rhs, |lhs, rhs| lhs == rhs, turtle, variables)
-        }
-        Condition::LessThan(ref lhs, ref rhs) => {
-            comparator(lhs, rhs, |lhs, rhs| lhs < rhs, turtle, variables)
-        }
-        Condition::GreaterThan(ref lhs, ref rhs) => {
-            comparator(lhs, rhs, |lhs, rhs| lhs > rhs, turtle, variables)
-        }
-    }?;
-
-    while should_execute {
-        execute(block, turtle, variables)?;
-
-        should_execute = match condition {
-            Condition::Equals(ref lhs, ref rhs) => {
-                comparator(lhs, rhs, |lhs, rhs| lhs == rhs, turtle, variables)?
-            }
-            Condition::LessThan(ref lhs, ref rhs) => {
-                comparator(lhs, rhs, |lhs, rhs| lhs < rhs, turtle, variables)?
-            }
-            Condition::GreaterThan(ref lhs, ref rhs) => {
-                comparator(lhs, rhs, |lhs, rhs| lhs > rhs, turtle, variables)?
-            }
-        };
     }
 
     Ok(())

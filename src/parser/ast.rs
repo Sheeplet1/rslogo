@@ -13,6 +13,7 @@ pub enum Expression {
     Usize(usize),
     Query(Query),
     Variable(String),
+    Math(Box<Math>),
 }
 
 #[derive(Debug, Clone)]
@@ -41,6 +42,14 @@ pub enum Query {
 }
 
 #[derive(Debug, Clone)]
+pub enum Math {
+    Add(Expression, Expression),
+    Sub(Expression, Expression),
+    Mul(Expression, Expression),
+    Div(Expression, Expression),
+}
+
+#[derive(Debug, Clone)]
 pub enum ControlFlow {
     If {
         condition: Condition,
@@ -57,4 +66,7 @@ pub enum Condition {
     Equals(Expression, Expression),
     LessThan(Expression, Expression),
     GreaterThan(Expression, Expression),
+    And(Expression, Expression),
+    Or(Expression, Expression),
+    NotEqual(Expression, Expression),
 }
