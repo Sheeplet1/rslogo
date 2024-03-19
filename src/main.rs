@@ -66,7 +66,6 @@ fn main() -> Result<(), ()> {
     let mut variables: HashMap<String, Expression> = HashMap::new();
     let tokens = tokenize_script(&contents);
     let ast = parse_tokens(tokens, &mut 0, &mut variables).unwrap();
-    println!("ast: {:#?}", ast);
     match execute(&ast, &mut turtle, &mut variables) {
         Ok(_) => (),
         Err(e) => {

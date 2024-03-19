@@ -51,6 +51,8 @@ pub enum Math {
     Lt(Expression, Expression),
     Gt(Expression, Expression),
     Ne(Expression, Expression),
+    // NOTE: Not sure how to feel about having And/Or in both conditions and math,
+    // since I believe them to be doing the same thing.
     And(Expression, Expression),
     Or(Expression, Expression),
 }

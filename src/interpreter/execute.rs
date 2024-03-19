@@ -126,17 +126,22 @@ pub fn execute(
                                 variables.insert(var, Expression::Usize(turtle.pen_color));
                             }
                         }
-                    } else if let Expression::Float(_) = expr {
-                        variables.insert(var.clone(), expr.clone());
-                    } else if let Expression::Number(_) = expr {
-                        variables.insert(var.clone(), expr.clone());
-                    } else if let Expression::Usize(_) = expr {
-                        variables.insert(var.clone(), expr.clone());
                     } else {
-                        return Err(ExecutionError {
-                            msg: format!("Make expression must be a float or a query. {:?}", expr),
-                        });
+                        variables.insert(var, expr.clone());
+                        println!("{:?}", variables);
                     }
+
+                    // else if let Expression::Float(_) = expr {
+                    //     variables.insert(var.clone(), expr.clone());
+                    // } else if let Expression::Number(_) = expr {
+                    //     variables.insert(var.clone(), expr.clone());
+                    // } else if let Expression::Usize(_) = expr {
+                    //     variables.insert(var.clone(), expr.clone());
+                    // } else {
+                    //     return Err(ExecutionError {
+                    //         msg: format!("Make expression must be a float or a query. {:?}", expr),
+                    //     });
+                    // }
                 }
                 Command::AddAssign(var, expr) => {
                     let val = match_expressions(expr, variables, turtle)?;
