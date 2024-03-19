@@ -35,7 +35,7 @@ pub fn match_expressions(
         Expression::Usize(val) => Ok(*val as f32),
         Expression::Query(query) => Ok(match_queries(query, turtle)),
         Expression::Variable(var) => get_f32_value(var, variables, turtle),
-        Expression::Math(expr) => Ok(eval_math(expr, variables, turtle)),
+        Expression::Math(expr) => Ok(eval_math(expr, variables, turtle)?),
     }
 }
 
@@ -54,7 +54,7 @@ fn get_f32_value(
     } else if let Some(Expression::Query(query)) = variables.get(var) {
         Ok(match_queries(query, turtle))
     } else if let Some(Expression::Math(expr)) = variables.get(var) {
-        Ok(eval_math(expr, variables, turtle))
+        Ok(eval_math(expr, variables, turtle)?)
     } else {
         Err(ExecutionError {
             msg: format!(
@@ -65,31 +65,35 @@ fn get_f32_value(
     }
 }
 
-fn eval_math(expr: &Math, variables: &HashMap<String, Expression>, turtle: &Turtle) -> f32 {
-    match expr {
+fn eval_math(
+    expr: &Math,
+    variables: &HashMap<String, Expression>,
+    turtle: &Turtle,
+) -> Result<f32, ExecutionError> {
+    let res = match expr {
         Math::Add(lhs, rhs) => {
-            let lhs_val = match_expressions(lhs, variables, turtle).unwrap();
-            let rhs_val = match_expressions(rhs, variables, turtle).unwrap();
+            let lhs_val = match_expressions(lhs, variables, turtle)?;
+            let rhs_val = match_expressions(rhs, variables, turtle)?;
             lhs_val + rhs_val
         }
         Math::Sub(lhs, rhs) => {
-            let lhs_val = match_expressions(lhs, variables, turtle).unwrap();
-            let rhs_val = match_expressions(rhs, variables, turtle).unwrap();
+            let lhs_val = match_expressions(lhs, variables, turtle)?;
+            let rhs_val = match_expressions(rhs, variables, turtle)?;
             lhs_val - rhs_val
         }
         Math::Mul(lhs, rhs) => {
-            let lhs_val = match_expressions(lhs, variables, turtle).unwrap();
-            let rhs_val = match_expressions(rhs, variables, turtle).unwrap();
+            let lhs_val = match_expressions(lhs, variables, turtle)?;
+            let rhs_val = match_expressions(rhs, variables, turtle)?;
             lhs_val * rhs_val
         }
         Math::Div(lhs, rhs) => {
-            let lhs_val = match_expressions(lhs, variables, turtle).unwrap();
-            let rhs_val = match_expressions(rhs, variables, turtle).unwrap();
+            let lhs_val = match_expressions(lhs, variables, turtle)?;
+            let rhs_val = match_expressions(rhs, variables, turtle)?;
             lhs_val / rhs_val
         }
         Math::Eq(lhs, rhs) => {
-            let lhs_val = match_expressions(lhs, variables, turtle).unwrap();
-            let rhs_val = match_expressions(rhs, variables, turtle).unwrap();
+            let lhs_val = match_expressions(lhs, variables, turtle)?;
+            let rhs_val = match_expressions(rhs, variables, turtle)?;
             if lhs_val == rhs_val {
                 1.0
             } else {
@@ -97,8 +101,8 @@ fn eval_math(expr: &Math, variables: &HashMap<String, Expression>, turtle: &Turt
             }
         }
         Math::Lt(lhs, rhs) => {
-            let lhs_val = match_expressions(lhs, variables, turtle).unwrap();
-            let rhs_val = match_expressions(rhs, variables, turtle).unwrap();
+            let lhs_val = match_expressions(lhs, variables, turtle)?;
+            let rhs_val = match_expressions(rhs, variables, turtle)?;
             if lhs_val < rhs_val {
                 1.0
             } else {
@@ -106,8 +110,8 @@ fn eval_math(expr: &Math, variables: &HashMap<String, Expression>, turtle: &Turt
             }
         }
         Math::Gt(lhs, rhs) => {
-            let lhs_val = match_expressions(lhs, variables, turtle).unwrap();
-            let rhs_val = match_expressions(rhs, variables, turtle).unwrap();
+            let lhs_val = match_expressions(lhs, variables, turtle)?;
+            let rhs_val = match_expressions(rhs, variables, turtle)?;
             if lhs_val > rhs_val {
                 1.0
             } else {
@@ -115,8 +119,8 @@ fn eval_math(expr: &Math, variables: &HashMap<String, Expression>, turtle: &Turt
             }
         }
         Math::Ne(lhs, rhs) => {
-            let lhs_val = match_expressions(lhs, variables, turtle).unwrap();
-            let rhs_val = match_expressions(rhs, variables, turtle).unwrap();
+            let lhs_val = match_expressions(lhs, variables, turtle)?;
+            let rhs_val = match_expressions(rhs, variables, turtle)?;
             if lhs_val != rhs_val {
                 1.0
             } else {
@@ -124,8 +128,8 @@ fn eval_math(expr: &Math, variables: &HashMap<String, Expression>, turtle: &Turt
             }
         }
         Math::And(lhs, rhs) => {
-            let lhs_val = match_expressions(lhs, variables, turtle).unwrap();
-            let rhs_val = match_expressions(rhs, variables, turtle).unwrap();
+            let lhs_val = match_expressions(lhs, variables, turtle)?;
+            let rhs_val = match_expressions(rhs, variables, turtle)?;
             if lhs_val != 0.0 && rhs_val != 0.0 {
                 1.0
             } else {
@@ -133,13 +137,14 @@ fn eval_math(expr: &Math, variables: &HashMap<String, Expression>, turtle: &Turt
             }
         }
         Math::Or(lhs, rhs) => {
-            let lhs_val = match_expressions(lhs, variables, turtle).unwrap();
-            let rhs_val = match_expressions(rhs, variables, turtle).unwrap();
+            let lhs_val = match_expressions(lhs, variables, turtle)?;
+            let rhs_val = match_expressions(rhs, variables, turtle)?;
             if lhs_val != 0.0 || rhs_val != 0.0 {
                 1.0
             } else {
                 0.0
             }
         }
-    }
+    };
+    Ok(res)
 }
