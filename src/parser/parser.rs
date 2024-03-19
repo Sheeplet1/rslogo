@@ -71,30 +71,7 @@ pub fn parse_tokens(
             "SETHEADING" => {
                 *curr_pos += 1;
                 let expr = match_parse(&tokens, curr_pos, variables)?;
-
-                // Because all expressions are parsed as floats, we need to convert
-                // the float to an i32 for the SETHEADING command.
-
-                // TODO: Refactor
-                match expr {
-                    Expression::Float(val) => ast.push(ASTNode::Command(Command::SetHeading(
-                        Expression::Number(val as i32),
-                    ))),
-                    Expression::Variable(var) => ast.push(ASTNode::Command(Command::SetHeading(
-                        Expression::Variable(var),
-                    ))),
-                    Expression::Query(query) => ast.push(ASTNode::Command(Command::SetHeading(
-                        Expression::Query(query),
-                    ))),
-                    _ => {
-                        return Err(ParseError {
-                            msg: format!(
-                                "Failed to parse expression for SETHEADING: {:?}",
-                                tokens[*curr_pos]
-                            ),
-                        });
-                    }
-                }
+                ast.push(ASTNode::Command(Command::SetHeading(expr)));
             }
             "SETX" => {
                 *curr_pos += 1;
@@ -109,53 +86,12 @@ pub fn parse_tokens(
             "SETPENCOLOR" => {
                 *curr_pos += 1;
                 let expr = match_parse(&tokens, curr_pos, variables)?;
-
-                // Because all expressions are parsed as floats, we need to convert
-                // the float to an usize for the SETPENCOLOR command.
-                // TODO: Refactor
-                match expr {
-                    Expression::Float(val) => ast.push(ASTNode::Command(Command::SetPenColor(
-                        Expression::Usize(val as usize),
-                    ))),
-                    Expression::Variable(var) => ast.push(ASTNode::Command(Command::SetPenColor(
-                        Expression::Variable(var),
-                    ))),
-                    Expression::Query(query) => ast.push(ASTNode::Command(Command::SetPenColor(
-                        Expression::Query(query),
-                    ))),
-                    _ => {
-                        return Err(ParseError {
-                            msg: format!(
-                                "Failed to parse value for SETPENCOLOR: {:?}",
-                                tokens[*curr_pos]
-                            ),
-                        });
-                    }
-                }
+                ast.push(ASTNode::Command(Command::SetPenColor(expr)));
             }
             "TURN" => {
                 *curr_pos += 1;
                 let expr = match_parse(&tokens, curr_pos, variables)?;
-
-                // Because all expressions are parsed as floats, we need to convert
-                // the float to an i32 for the TURN command.
-                // TODO: Refactor
-                match expr {
-                    Expression::Float(val) => ast.push(ASTNode::Command(Command::Turn(
-                        Expression::Number(val as i32),
-                    ))),
-                    Expression::Variable(var) => {
-                        ast.push(ASTNode::Command(Command::Turn(Expression::Variable(var))))
-                    }
-                    Expression::Query(query) => {
-                        ast.push(ASTNode::Command(Command::Turn(Expression::Query(query))))
-                    }
-                    _ => {
-                        return Err(ParseError {
-                            msg: format!("Failed to parse value for TURN: {:?}", tokens[*curr_pos]),
-                        });
-                    }
-                }
+                ast.push(ASTNode::Command(Command::Turn(expr)));
             }
             "MAKE" => {
                 *curr_pos += 1;

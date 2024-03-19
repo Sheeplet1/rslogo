@@ -47,6 +47,12 @@ pub enum Math {
     Sub(Expression, Expression),
     Mul(Expression, Expression),
     Div(Expression, Expression),
+    Eq(Expression, Expression),
+    Lt(Expression, Expression),
+    Gt(Expression, Expression),
+    Ne(Expression, Expression),
+    And(Expression, Expression),
+    Or(Expression, Expression),
 }
 
 #[derive(Debug, Clone)]
@@ -64,9 +70,9 @@ pub enum ControlFlow {
 #[derive(Debug, Clone)]
 pub enum Condition {
     Equals(Expression, Expression),
+    // TODO: Consider removing these and using the Math enum
     LessThan(Expression, Expression),
     GreaterThan(Expression, Expression),
     And(Expression, Expression),
     Or(Expression, Expression),
-    NotEqual(Expression, Expression),
 }

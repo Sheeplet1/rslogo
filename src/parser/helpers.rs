@@ -28,9 +28,12 @@ pub fn match_parse(
     pos: &mut usize,
     variables: &mut HashMap<String, Expression>,
 ) -> Result<Expression, ParseError> {
+    println!("Matching parse: {:?}", tokens[*pos]);
     if tokens[*pos].starts_with('"') {
+        // Normal expressions
         parse_expression(tokens, *pos).map(Expression::Float)
     } else if tokens[*pos].starts_with(':') {
+        // Variables
         let token = tokens[*pos].trim_start_matches(':');
         if variables.contains_key(token) {
             Ok(Expression::Variable(token.to_string()))
@@ -46,10 +49,14 @@ pub fn match_parse(
         || tokens[*pos] == "-"
         || tokens[*pos] == "*"
         || tokens[*pos] == "/"
+        || tokens[*pos] == "EQ"
+        || tokens[*pos] == "LT"
+        || tokens[*pos] == "GT"
+        || tokens[*pos] == "NE"
+        || tokens[*pos] == "AND"
+        || tokens[*pos] == "OR"
     {
-        let res = parse_maths(tokens, pos, variables).map(Expression::Float);
-        println!("{:?}", res);
-        res
+        parse_maths(tokens, pos, variables)
     } else {
         parse_query(tokens, *pos).map(Expression::Query)
     }
@@ -105,7 +112,10 @@ pub fn parse_query(tokens: &[&str], pos: usize) -> Result<Query, ParseError> {
         "COLOR" => Query::Color,
         _ => {
             return Err(ParseError {
-                msg: format!("Failed to parse this query expression: {:?}", tokens[pos]),
+                msg: format!(
+                    "Failed to parse this expression as a query: {:?}",
+                    tokens[pos]
+                ),
             });
         }
     };
@@ -129,10 +139,21 @@ pub fn parse_conditions(
     curr_pos: &mut usize,
     variables: &mut HashMap<String, Expression>,
 ) -> Result<Condition, ParseError> {
-    // Conditions will usually be in the form of:
-    // <operator> <expression> <expression>
-
     let condition_idx = *curr_pos;
+
+    // If condition_idx is not an condition but a boolean, we return early.
+    // TODO: Refactor
+    if tokens[condition_idx] != "EQ"
+        && tokens[condition_idx] != "LT"
+        && tokens[condition_idx] != "GT"
+        && tokens[condition_idx] != "AND"
+        && tokens[condition_idx] != "OR"
+    {
+        let res = match_parse(tokens, curr_pos, variables)
+            .map(|expr| Condition::Equals(expr, Expression::Float(1.0)));
+        *curr_pos += 1;
+        return res;
+    }
 
     *curr_pos += 1;
     let expr_1 = match_parse(tokens, curr_pos, variables)?;
@@ -145,6 +166,8 @@ pub fn parse_conditions(
         "EQ" => Condition::Equals(expr_1, expr_2),
         "LT" => Condition::LessThan(expr_1, expr_2),
         "GT" => Condition::GreaterThan(expr_1, expr_2),
+        "AND" => Condition::And(expr_1, expr_2),
+        "OR" => Condition::Or(expr_1, expr_2),
         _ => {
             return Err(ParseError {
                 msg: format!("Invalid condition operator: {:?}", tokens[condition_idx]),

@@ -7,7 +7,6 @@ use crate::{
 
 use super::{execute::execute, matches::match_expressions, turtle::Turtle};
 
-// TODO: Make this comparator generic so that it can handle both f32 and bool.
 fn comparator(
     lhs: &Expression,
     rhs: &Expression,
@@ -27,7 +26,6 @@ pub fn eval_exec_if(
     turtle: &mut Turtle,
     variables: &mut HashMap<String, Expression>,
 ) -> Result<(), ExecutionError> {
-    // TODO: Refactor should_execute
     let exec = should_execute(condition, turtle, variables)?;
 
     if exec {
@@ -43,7 +41,6 @@ pub fn eval_exec_while(
     turtle: &mut Turtle,
     variables: &mut HashMap<String, Expression>,
 ) -> Result<(), ExecutionError> {
-    // TODO: Refactor should_execute
     let mut exec = should_execute(condition, turtle, variables)?;
 
     while exec {
@@ -65,13 +62,10 @@ fn should_execute(
         Condition::LessThan(lhs, rhs) => comparator(lhs, rhs, |a, b| a < b, turtle, variables),
         Condition::GreaterThan(lhs, rhs) => comparator(lhs, rhs, |a, b| a > b, turtle, variables),
         Condition::And(lhs, rhs) => {
-            todo!()
+            comparator(lhs, rhs, |a, b| a != 0.0 && b != 0.0, turtle, variables)
         }
         Condition::Or(lhs, rhs) => {
-            todo!()
-        }
-        Condition::NotEqual(lhs, rhs) => {
-            todo!()
+            comparator(lhs, rhs, |a, b| a != 0.0 || b != 0.0, turtle, variables)
         }
     }
 }

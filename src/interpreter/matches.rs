@@ -29,7 +29,9 @@ pub fn match_expressions(
 ) -> Result<f32, ExecutionError> {
     match expr {
         Expression::Float(val) => Ok(*val),
+        // TODO: What is the point of this is we are just casting it to f32?
         Expression::Number(val) => Ok(*val as f32),
+        // TODO: What is the point of this is we are just casting it to f32?
         Expression::Usize(val) => Ok(*val as f32),
         Expression::Query(query) => Ok(match_queries(query, turtle)),
         Expression::Variable(var) => get_f32_value(var, variables),
