@@ -33,6 +33,7 @@ pub fn match_parse(
     } else if tokens[*pos].starts_with(':') {
         // Variables
         let token = tokens[*pos].trim_start_matches(':');
+
         if variables.contains_key(token) {
             Ok(Expression::Variable(token.to_string()))
         } else {
@@ -43,17 +44,10 @@ pub fn match_parse(
                 ),
             })
         }
-    } else if tokens[*pos] == "+"
-        || tokens[*pos] == "-"
-        || tokens[*pos] == "*"
-        || tokens[*pos] == "/"
-        || tokens[*pos] == "EQ"
-        || tokens[*pos] == "LT"
-        || tokens[*pos] == "GT"
-        || tokens[*pos] == "NE"
-        || tokens[*pos] == "AND"
-        || tokens[*pos] == "OR"
-    {
+    } else if matches!(
+        tokens[*pos],
+        "+" | "-" | "*" | "/" | "EQ" | "LT" | "GT" | "NE" | "AND" | "OR"
+    ) {
         parse_maths(tokens, pos, variables)
     } else {
         parse_query(tokens, *pos).map(Expression::Query)
@@ -75,6 +69,7 @@ pub fn match_parse(
 pub fn parse_expression(tokens: &[&str], pos: usize) -> Result<f32, ParseError> {
     if tokens[pos].starts_with('"') {
         let token = tokens[pos].trim_start_matches('"');
+
         if token == "TRUE" {
             Ok(1.0)
         } else if token == "FALSE" {
@@ -141,23 +136,13 @@ pub fn parse_conditions(
 
     // If condition_idx is not an condition but a boolean, we return early.
     // TODO: Refactor
-    if tokens[condition_idx] != "EQ"
-        && tokens[condition_idx] != "LT"
-        && tokens[condition_idx] != "GT"
-        && tokens[condition_idx] != "AND"
-        && tokens[condition_idx] != "OR"
-    {
-        let res = match_parse(tokens, curr_pos, variables)
+    if !matches!(tokens[condition_idx], "EQ" | "LT" | "GT" | "AND" | "OR") {
+        return match_parse(tokens, &mut (*curr_pos + 1), variables)
             .map(|expr| Condition::Equals(expr, Expression::Float(1.0)));
-        *curr_pos += 1;
-        return res;
-    }
+    };
 
-    *curr_pos += 1;
-    let expr_1 = match_parse(tokens, curr_pos, variables)?;
-
-    *curr_pos += 1;
-    let expr_2 = match_parse(tokens, curr_pos, variables)?;
+    let expr_1 = match_parse(tokens, &mut (*curr_pos + 1), variables)?;
+    let expr_2 = match_parse(tokens, &mut (*curr_pos + 1), variables)?;
 
     *curr_pos += 1;
     let condition = match tokens[condition_idx] {
@@ -233,10 +218,8 @@ pub fn parse_maths(
         "+" | "-" | "*" | "/" | "EQ" | "LT" | "GT" | "NE" | "AND" | "OR" => {
             let operator = tokens[*curr_pos];
 
-            *curr_pos += 1;
-            let expr_1 = match_parse(tokens, curr_pos, variables)?;
-            *curr_pos += 1;
-            let expr_2 = match_parse(tokens, curr_pos, variables)?;
+            let expr_1 = match_parse(tokens, &mut (*curr_pos + 1), variables)?;
+            let expr_2 = match_parse(tokens, &mut (*curr_pos + 1), variables)?;
 
             match operator {
                 "+" => Expression::Math(Box::new(Math::Add(expr_1, expr_2))),

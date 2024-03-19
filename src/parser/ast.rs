@@ -42,6 +42,7 @@ pub enum Query {
 }
 
 #[derive(Debug, Clone)]
+/// Mathematical operators.
 pub enum Math {
     Add(Expression, Expression),
     Sub(Expression, Expression),
@@ -51,8 +52,6 @@ pub enum Math {
     Lt(Expression, Expression),
     Gt(Expression, Expression),
     Ne(Expression, Expression),
-    // NOTE: Not sure how to feel about having And/Or in both conditions and math,
-    // since I believe them to be doing the same thing.
     And(Expression, Expression),
     Or(Expression, Expression),
 }
@@ -70,9 +69,9 @@ pub enum ControlFlow {
 }
 
 #[derive(Debug, Clone)]
+/// Conditions are used to control the flow of execution.
 pub enum Condition {
     Equals(Expression, Expression),
-    // TODO: Consider removing these and using the Math enum
     LessThan(Expression, Expression),
     GreaterThan(Expression, Expression),
     And(Expression, Expression),

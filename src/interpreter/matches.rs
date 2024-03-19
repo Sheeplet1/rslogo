@@ -24,37 +24,37 @@ fn match_queries(query: &Query, turtle: &Turtle) -> f32 {
 /// as a float. This is because boolean values are handled elsewhere.
 pub fn match_expressions(
     expr: &Expression,
-    variables: &HashMap<String, Expression>,
+    vars: &HashMap<String, Expression>,
     turtle: &Turtle,
 ) -> Result<f32, ExecutionError> {
     match expr {
         Expression::Float(val) => Ok(*val),
         // TODO: What is the point of this is we are just casting it to f32?
         Expression::Number(val) => Ok(*val as f32),
-        // TODO: What is the point of this is we are just casting it to f32?
         Expression::Usize(val) => Ok(*val as f32),
         Expression::Query(query) => Ok(match_queries(query, turtle)),
-        Expression::Variable(var) => get_f32_value(var, variables, turtle),
-        Expression::Math(expr) => Ok(eval_math(expr, variables, turtle)?),
+        Expression::Variable(var) => get_var_val(var, vars, turtle),
+        Expression::Math(expr) => Ok(eval_math(expr, vars, turtle)?),
     }
 }
 
 /// Helper function to get the value of a variable. Defaults to f32.
-fn get_f32_value(
+fn get_var_val(
     var: &str,
-    variables: &HashMap<String, Expression>,
+    vars: &HashMap<String, Expression>,
     turtle: &Turtle,
 ) -> Result<f32, ExecutionError> {
-    if let Some(Expression::Float(val)) = variables.get(var) {
+    // TODO: Refactor
+    if let Some(Expression::Float(val)) = vars.get(var) {
         Ok(*val)
-    } else if let Some(Expression::Number(val)) = variables.get(var) {
+    } else if let Some(Expression::Number(val)) = vars.get(var) {
         Ok(*val as f32)
-    } else if let Some(Expression::Usize(val)) = variables.get(var) {
+    } else if let Some(Expression::Usize(val)) = vars.get(var) {
         Ok(*val as f32)
-    } else if let Some(Expression::Query(query)) = variables.get(var) {
+    } else if let Some(Expression::Query(query)) = vars.get(var) {
         Ok(match_queries(query, turtle))
-    } else if let Some(Expression::Math(expr)) = variables.get(var) {
-        Ok(eval_math(expr, variables, turtle)?)
+    } else if let Some(Expression::Math(expr)) = vars.get(var) {
+        Ok(eval_math(expr, vars, turtle)?)
     } else {
         Err(ExecutionError {
             msg: format!(
@@ -65,86 +65,80 @@ fn get_f32_value(
     }
 }
 
+fn eval_binary_op<T>(
+    lhs: &Expression,
+    rhs: &Expression,
+    vars: &HashMap<String, Expression>,
+    turtle: &Turtle,
+    op: T,
+) -> Result<f32, ExecutionError>
+where
+    T: Fn(f32, f32) -> f32,
+{
+    let lhs_val = match_expressions(lhs, vars, turtle)?;
+    let rhs_val = match_expressions(rhs, vars, turtle)?;
+    Ok(op(lhs_val, rhs_val))
+}
+
 fn eval_math(
     expr: &Math,
-    variables: &HashMap<String, Expression>,
+    vars: &HashMap<String, Expression>,
     turtle: &Turtle,
 ) -> Result<f32, ExecutionError> {
-    let res = match expr {
-        Math::Add(lhs, rhs) => {
-            let lhs_val = match_expressions(lhs, variables, turtle)?;
-            let rhs_val = match_expressions(rhs, variables, turtle)?;
-            lhs_val + rhs_val
-        }
-        Math::Sub(lhs, rhs) => {
-            let lhs_val = match_expressions(lhs, variables, turtle)?;
-            let rhs_val = match_expressions(rhs, variables, turtle)?;
-            lhs_val - rhs_val
-        }
-        Math::Mul(lhs, rhs) => {
-            let lhs_val = match_expressions(lhs, variables, turtle)?;
-            let rhs_val = match_expressions(rhs, variables, turtle)?;
-            lhs_val * rhs_val
-        }
+    match expr {
+        Math::Add(lhs, rhs) => Ok(eval_binary_op(lhs, rhs, vars, turtle, |a, b| a + b)?),
+        Math::Sub(lhs, rhs) => Ok(eval_binary_op(lhs, rhs, vars, turtle, |a, b| a - b)?),
+        Math::Mul(lhs, rhs) => Ok(eval_binary_op(lhs, rhs, vars, turtle, |a, b| a * b)?),
         Math::Div(lhs, rhs) => {
-            let lhs_val = match_expressions(lhs, variables, turtle)?;
-            let rhs_val = match_expressions(rhs, variables, turtle)?;
-            lhs_val / rhs_val
+            let rhs_val = match_expressions(rhs, vars, turtle)?;
+            if rhs_val == 0.0 {
+                return Err(ExecutionError {
+                    msg: "Division by zero".to_string(),
+                });
+            }
+            Ok(eval_binary_op(lhs, rhs, vars, turtle, |a, b| a / b)?)
         }
-        Math::Eq(lhs, rhs) => {
-            let lhs_val = match_expressions(lhs, variables, turtle)?;
-            let rhs_val = match_expressions(rhs, variables, turtle)?;
-            if lhs_val == rhs_val {
+        Math::Eq(lhs, rhs) => Ok(eval_binary_op(lhs, rhs, vars, turtle, |a, b| {
+            if a == b {
                 1.0
             } else {
                 0.0
             }
-        }
-        Math::Lt(lhs, rhs) => {
-            let lhs_val = match_expressions(lhs, variables, turtle)?;
-            let rhs_val = match_expressions(rhs, variables, turtle)?;
-            if lhs_val < rhs_val {
+        })?),
+        Math::Lt(lhs, rhs) => Ok(eval_binary_op(lhs, rhs, vars, turtle, |a, b| {
+            if a < b {
                 1.0
             } else {
                 0.0
             }
-        }
-        Math::Gt(lhs, rhs) => {
-            let lhs_val = match_expressions(lhs, variables, turtle)?;
-            let rhs_val = match_expressions(rhs, variables, turtle)?;
-            if lhs_val > rhs_val {
+        })?),
+        Math::Gt(lhs, rhs) => Ok(eval_binary_op(lhs, rhs, vars, turtle, |a, b| {
+            if a > b {
                 1.0
             } else {
                 0.0
             }
-        }
-        Math::Ne(lhs, rhs) => {
-            let lhs_val = match_expressions(lhs, variables, turtle)?;
-            let rhs_val = match_expressions(rhs, variables, turtle)?;
-            if lhs_val != rhs_val {
+        })?),
+        Math::Ne(lhs, rhs) => Ok(eval_binary_op(lhs, rhs, vars, turtle, |a, b| {
+            if a != b {
                 1.0
             } else {
                 0.0
             }
-        }
-        Math::And(lhs, rhs) => {
-            let lhs_val = match_expressions(lhs, variables, turtle)?;
-            let rhs_val = match_expressions(rhs, variables, turtle)?;
-            if lhs_val != 0.0 && rhs_val != 0.0 {
+        })?),
+        Math::And(lhs, rhs) => Ok(eval_binary_op(lhs, rhs, vars, turtle, |a, b| {
+            if a != 0.0 && b != 0.0 {
                 1.0
             } else {
                 0.0
             }
-        }
-        Math::Or(lhs, rhs) => {
-            let lhs_val = match_expressions(lhs, variables, turtle)?;
-            let rhs_val = match_expressions(rhs, variables, turtle)?;
-            if lhs_val != 0.0 || rhs_val != 0.0 {
+        })?),
+        Math::Or(lhs, rhs) => Ok(eval_binary_op(lhs, rhs, vars, turtle, |a, b| {
+            if a != 0.0 || b != 0.0 {
                 1.0
             } else {
                 0.0
             }
-        }
-    };
-    Ok(res)
+        })?),
+    }
 }
