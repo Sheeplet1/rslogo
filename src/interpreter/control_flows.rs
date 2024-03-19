@@ -1,3 +1,7 @@
+//! # Control Flows
+//!
+//! Contains the implementation for the execution of control flow statements.
+
 use std::collections::HashMap;
 
 use crate::{
@@ -7,6 +11,7 @@ use crate::{
 
 use super::{execute::execute, matches::match_expressions, turtle::Turtle};
 
+/// Generic comparator function to compare two expressions.
 fn comparator(
     lhs: &Expression,
     rhs: &Expression,
@@ -19,7 +24,27 @@ fn comparator(
     Ok(comparator(lhs_val, rhs_val))
 }
 
-/// Helper function to evaluate conditions and execute the block.
+/// Function to evaluate and execute an `if` statement.
+///
+/// # Example
+///
+/// ```rust
+/// use std::collections::HashMap;
+/// use turtle::interpreter::control_flows::eval_exec_if;
+/// use turtle::interpreter::errors::ExecutionError;
+/// use turtle::parser::ast::{ASTNode, Condition, Expression};
+/// use turtle::interpreter::turtle::Turtle;
+///
+/// let condition = Condition::Equals(
+///    Box::new(Expression::Number(1.0)),
+///    Box::new(Expression::Number(1.0)),
+///    );
+/// let block = vec![ASTNode::Forward(Expression::Number(10.0))];
+/// let mut turtle = Turtle::new();
+/// let mut variables = HashMap::new();
+/// let result = eval_exec_if(&condition, &block, &mut turtle, &mut variables);
+/// assert_eq!(result, Ok(()));
+/// ```
 pub fn eval_exec_if(
     condition: &Condition,
     block: &Vec<ASTNode>,
@@ -35,6 +60,27 @@ pub fn eval_exec_if(
     Ok(())
 }
 
+/// Function to evaluate and execute a `while` statement.
+///
+/// # Example
+///
+/// ```rust
+/// use std::collections::HashMap;
+/// use turtle::interpreter::control_flows::eval_exec_while;
+/// use turtle::interpreter::errors::ExecutionError;
+/// use turtle::parser::ast::{ASTNode, Condition, Expression};
+/// use turtle::interpreter::turtle::Turtle;
+///
+/// let condition = Condition::Equals(
+///   Box::new(Expression::Number(1.0)),
+///   Box::new(Expression::Number(1.0)),
+///   );
+/// let block = vec![ASTNode::Forward(Expression::Number(10.0))];
+/// let mut turtle = Turtle::new();
+/// let mut variables = HashMap::new();
+/// let result = eval_exec_while(&condition, &block, &mut turtle, &mut variables);
+/// assert_eq!(result, Ok(()));
+/// ```
 pub fn eval_exec_while(
     condition: &Condition,
     block: &Vec<ASTNode>,
@@ -52,6 +98,8 @@ pub fn eval_exec_while(
     Ok(())
 }
 
+/// Evaluates a condition and returns a boolean to determine if a conditional
+/// block should be executed.
 fn should_execute(
     condition: &Condition,
     turtle: &Turtle,

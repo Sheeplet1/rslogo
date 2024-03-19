@@ -1,3 +1,6 @@
+//! # Matching functions
+//!
+//! Generic matching functions to assist in the execution phase.
 use std::collections::HashMap;
 
 use crate::{
@@ -21,7 +24,7 @@ fn match_queries(query: &Query, turtle: &Turtle) -> f32 {
 
 /// Helper function to match expressions to their values. This defaults for
 /// f32 values. We return an ExecutionError if the expression is not parsable
-/// as a float. This is because boolean values are handled elsewhere.
+/// as a float.
 pub fn match_expressions(
     expr: &Expression,
     vars: &HashMap<String, Expression>,
@@ -65,6 +68,7 @@ fn get_var_val(
     }
 }
 
+/// Evaluate binary operations on expressions.
 fn eval_binary_op<T>(
     lhs: &Expression,
     rhs: &Expression,
@@ -80,6 +84,28 @@ where
     Ok(op(lhs_val, rhs_val))
 }
 
+/// Evaluate basic mathematical expressions using the basic operators (+, -, *, /).
+/// Also evaluates logical expressions (==, <, >, !=, &&, ||).
+///
+/// # Example
+///
+/// ```
+/// use std::collections::HashMap;
+/// use turtle::Turtle;
+/// use interpreter::matches::eval_math;
+/// use parser::ast::{Expression, Math};
+/// use interpreter::errors::ExecutionError;
+///
+/// let mut vars = HashMap::new();
+/// let turtle = Turtle::new();
+///
+/// let expr = Math::Add(
+///    Box::new(Expression::Float(1.0)),
+///    Box::new(Expression::Float(2.0)),
+///    );
+///
+/// assert_eq!(eval_math(&expr, &vars, &turtle), Ok(3.0));
+/// ````
 fn eval_math(
     expr: &Math,
     vars: &HashMap<String, Expression>,

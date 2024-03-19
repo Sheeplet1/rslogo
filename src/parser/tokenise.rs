@@ -1,3 +1,5 @@
+//! Tokenise a Logo Script into a vector of tokens.
+
 /// Tokenises an Logo script into a vector of tokens. Each token is an instruction
 /// or value.
 ///

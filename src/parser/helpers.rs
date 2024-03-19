@@ -1,3 +1,7 @@
+//! Parser functions for the parser module.
+//!
+//! These functions are used to parse the tokens into the corresponding ASTNode.
+
 use std::collections::HashMap;
 
 use crate::errors::ParseError;

@@ -7,16 +7,6 @@ pub enum ASTNode {
 }
 
 #[derive(Debug, Clone)]
-pub enum Expression {
-    Float(f32),
-    Number(i32),
-    Usize(usize),
-    Query(Query),
-    Variable(String),
-    Math(Box<Math>),
-}
-
-#[derive(Debug, Clone)]
 pub enum Command {
     Forward(Expression),
     Back(Expression),
@@ -31,6 +21,18 @@ pub enum Command {
     SetY(Expression),
     Make(String, Expression),
     AddAssign(String, Expression),
+}
+
+#[derive(Debug, Clone)]
+pub enum Expression {
+    Float(f32),
+    // NOTE: By design, the Number and Usize are not strictly necessary, but
+    // are used to make the parser more readable. This  is a design limitation.
+    Number(i32),
+    Usize(usize),
+    Query(Query),
+    Variable(String),
+    Math(Box<Math>),
 }
 
 #[derive(Debug, Clone)]

@@ -49,6 +49,7 @@ impl Turtle<'_> {
         self.pen_down = false;
     }
 
+    /// Set the pen color. The color index must be between 0 and 15 inclusive.
     pub fn set_pen_color(&mut self, color: usize) -> Result<(), ExtendedUnsvgError> {
         if !(0..=15).contains(&color) {
             return Err(ExtendedUnsvgError {
@@ -60,12 +61,12 @@ impl Turtle<'_> {
         Ok(())
     }
 
-    /// Degrees are not normalised.
+    /// Turn the turtle by the given number of degrees. Degrees are not normalised.
     pub fn turn(&mut self, degrees: i32) {
         self.heading += degrees;
     }
 
-    /// Degrees are not normalised.
+    /// Set the heading of the turtle. Degrees are not normalised.
     pub fn set_heading(&mut self, degrees: i32) {
         self.heading = degrees;
     }
@@ -102,6 +103,8 @@ impl Turtle<'_> {
         self.move_turtle((self.heading + 90) % 360, distance);
     }
 
+    /// Move the turtle in the direction of the heading by the given distance.
+    /// If the pen is down, draw a line to the new position.
     fn move_turtle(&mut self, heading: i32, distance: f32) {
         let color = COLORS[self.pen_color];
         if self.pen_down {
