@@ -72,7 +72,6 @@ pub enum ControlFlow {
 #[derive(Debug, Clone)]
 pub enum Condition {
     Equals(Expression, Expression),
-    // TODO: Consider removing these and using the Math enum
     LessThan(Expression, Expression),
     GreaterThan(Expression, Expression),
     And(Expression, Expression),
