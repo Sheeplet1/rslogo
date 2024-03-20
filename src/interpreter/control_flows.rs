@@ -12,6 +12,23 @@ use crate::{
 use super::{execute::execute, matches::match_expressions, turtle::Turtle};
 
 /// Compares two expressions using a given comparator.
+///
+/// # Examples
+///
+/// ```rust
+/// use std::collections::HashMap;
+/// use turtle::Turtle;
+/// use parser::ast::{Condition, Expression};
+/// use interpreter::control_flows::comparator;
+/// use interpreter::errors::ExecutionError;
+///
+/// let mut variables: HashMap<String, Expression> = HashMap::new();
+/// let turtle = Turtle::new();
+/// let lhs = Expression::Float(8.0);
+/// let rhs = Expression::Float(10.0);
+/// let result = comparator(&lhs, &rhs, |a, b| a < b, &turtle, &variables);
+/// assert_eq!(result, Ok(true));
+/// ```
 fn comparator(
     lhs: &Expression,
     rhs: &Expression,
@@ -100,6 +117,26 @@ pub fn eval_exec_while(
 }
 
 /// Determines if the condition is true or not.
+///
+/// # Examples
+///
+/// ```rust
+/// use std::collections::HashMap;
+/// use turtle::Turtle;
+/// use parser::ast::{Condition, Expression};
+/// use interpreter::control_flows::should_execute;
+/// use interpreter::errors::ExecutionError;
+///
+/// let mut variables: HashMap<String, Expression> = HashMap::new();
+/// let turtle = Turtle::new();
+/// let condition = Condition::LessThan(
+///   Box::new(Expression::Float(8.0)),
+///   Box::new(Expression::Float(10.0)),
+/// );
+///
+/// let result = should_execute(&condition, &turtle, &variables);
+/// assert_eq!(result, Ok(true));
+/// ```
 fn should_execute(
     condition: &Condition,
     turtle: &Turtle,

@@ -27,11 +27,3 @@ This is quite hacky but implemented this way to reduce complexity of the code du
 to time limitations and previous design choices.
 
 Previous design choices being to default all `Expression`s to `f32`.
-
-## Multiple And/Or enums
-
-As of right now, I believe them to be doing similar things but they have been
-separated as a consequence of design.
-
-I think having multiple And/Or enums has made it confusing and can interfere
-with scalability.

@@ -17,7 +17,7 @@ mod parser;
 
 use interpreter::execute::execute;
 use parser::{ast::Expression, parser::parse_tokens, tokenise::tokenize_script};
-use std::{collections::HashMap, fs::File, io::Read};
+use std::{collections::HashMap, error::Error, fs::File, io::Read};
 
 use clap::Parser;
 use unsvg::Image;
@@ -38,7 +38,7 @@ struct Args {
     width: u32,
 }
 
-fn main() -> Result<(), ()> {
+fn main() -> Result<(), Box<dyn Error>> {
     let args: Args = Args::parse();
 
     // Access the parsed arguments
@@ -62,35 +62,26 @@ fn main() -> Result<(), ()> {
         image: &mut image,
     };
 
-    // TODO: refactor unwraps to give proper error messages
-    let mut variables: HashMap<String, Expression> = HashMap::new();
+    let mut vars: HashMap<String, Expression> = HashMap::new();
     let tokens = tokenize_script(&contents);
-    let ast = parse_tokens(tokens, &mut 0, &mut variables).unwrap();
-    match execute(&ast, &mut turtle, &mut variables) {
-        Ok(_) => (),
-        Err(e) => {
-            eprintln!("{e}");
-        }
-    }
+    let ast = parse_tokens(tokens, &mut 0, &mut vars)?;
+    execute(&ast, &mut turtle, &mut vars)?;
 
     match image_path.extension().and_then(|s| s.to_str()) {
         Some("svg") => {
             let res = image.save_svg(&image_path);
             if let Err(e) = res {
-                eprintln!("Error saving svg: {e}");
-                return Err(());
+                return Err(format!("Error saving svg: {e}").into());
             }
         }
         Some("png") => {
             let res = image.save_png(&image_path);
             if let Err(e) = res {
-                eprintln!("Error saving png: {e}");
-                return Err(());
+                return Err(format!("Error saving png: {e}").into());
             }
         }
         _ => {
-            eprintln!("File extension not supported");
-            return Err(());
+            return Err("Invalid file extension. Please use .svg or .png".into());
         }
     }
 

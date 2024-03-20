@@ -41,9 +41,8 @@ pub fn match_expressions(
 ) -> Result<f32, ExecutionError> {
     match expr {
         Expression::Float(val) => Ok(*val),
-        // TODO: What is the point of this is we are just casting it to f32?
+        // NOTE: What is the point of this is we are just casting it to f32?
         Expression::Number(val) => Ok(*val as f32),
-        // TODO: What is the point of this is we are just casting it to f32?
         Expression::Usize(val) => Ok(*val as f32),
         Expression::Query(query) => Ok(match_queries(query, turtle)),
         Expression::Variable(var) => get_var_val(var, variables, turtle),
@@ -52,6 +51,16 @@ pub fn match_expressions(
 }
 
 /// Gets the value of a variable from the variables hashmap.
+///
+/// # Example
+///
+/// ```rust
+/// let mut variables = HashMap::new();
+/// variables.insert("x".to_string(), Expression::Float(1.0));
+/// let turtle = Turtle::new();
+/// let res = get_var_val("x", &variables, &turtle);
+/// assert_eq!(res, Ok(1.0));
+/// ```
 fn get_var_val(
     var: &str,
     variables: &HashMap<String, Expression>,
@@ -77,6 +86,56 @@ fn get_var_val(
     }
 }
 
+/// Evaluates a binary operation and returns the result.
+///
+/// # Example
+///
+/// ```rust
+/// let lhs = Expression::Float(1.0);
+/// let rhs = Expression::Float(2.0);
+///
+/// let res = eval_binary_op(&lhs, &rhs, &HashMap::new(), &Turtle::new(), |a, b| a + b);
+/// assert_eq!(res, Ok(3.0));
+/// ```
+fn eval_binary_op(
+    lhs: &Expression,
+    rhs: &Expression,
+    variables: &HashMap<String, Expression>,
+    turtle: &Turtle,
+    op: fn(f32, f32) -> f32,
+) -> Result<f32, ExecutionError> {
+    let lhs_val = match_expressions(lhs, variables, turtle)?;
+    let rhs_val = match_expressions(rhs, variables, turtle)?;
+    Ok(op(lhs_val, rhs_val))
+}
+
+/// Evaluates a logical operation and returns the result.
+///
+/// # Example
+///
+/// ```rust
+/// let lhs = Expression::Float(1.0);
+/// let rhs = Expression::Float(2.0);
+///
+/// let res = eval_logical_op(&lhs, &rhs, &HashMap::new(), &Turtle::new(), |a, b| a + b);
+/// assert_eq!(res, Ok(1.0));
+/// ```
+fn eval_logical_op(
+    lhs: &Expression,
+    rhs: &Expression,
+    variables: &HashMap<String, Expression>,
+    turtle: &Turtle,
+    op: fn(f32, f32) -> f32,
+) -> Result<f32, ExecutionError> {
+    let lhs_val = match_expressions(lhs, variables, turtle)?;
+    let rhs_val = match_expressions(rhs, variables, turtle)?;
+    if op(lhs_val, rhs_val) != 0.0 {
+        Ok(1.0)
+    } else {
+        Ok(0.0)
+    }
+}
+
 /// Evaluates a Math expression and returns the result. Math expressions are
 /// basic arithmetics or logical operations.
 ///
@@ -93,81 +152,62 @@ fn eval_math(
     variables: &HashMap<String, Expression>,
     turtle: &Turtle,
 ) -> Result<f32, ExecutionError> {
-    let res = match expr {
-        Math::Add(lhs, rhs) => {
-            let lhs_val = match_expressions(lhs, variables, turtle)?;
-            let rhs_val = match_expressions(rhs, variables, turtle)?;
-            lhs_val + rhs_val
-        }
-        Math::Sub(lhs, rhs) => {
-            let lhs_val = match_expressions(lhs, variables, turtle)?;
-            let rhs_val = match_expressions(rhs, variables, turtle)?;
-            lhs_val - rhs_val
-        }
-        Math::Mul(lhs, rhs) => {
-            let lhs_val = match_expressions(lhs, variables, turtle)?;
-            let rhs_val = match_expressions(rhs, variables, turtle)?;
-            lhs_val * rhs_val
-        }
+    match expr {
+        Math::Add(lhs, rhs) => eval_binary_op(lhs, rhs, variables, turtle, |a, b| a + b),
+        Math::Sub(lhs, rhs) => eval_binary_op(lhs, rhs, variables, turtle, |a, b| a - b),
+        Math::Mul(lhs, rhs) => eval_binary_op(lhs, rhs, variables, turtle, |a, b| a * b),
         Math::Div(lhs, rhs) => {
-            let lhs_val = match_expressions(lhs, variables, turtle)?;
             let rhs_val = match_expressions(rhs, variables, turtle)?;
-            lhs_val / rhs_val
+            if rhs_val == 0.0 {
+                return Err(ExecutionError {
+                    msg: "Division by zero".to_string(),
+                });
+            }
+            Ok(eval_binary_op(lhs, rhs, variables, turtle, |a, b| a / b)?)
         }
         Math::Eq(lhs, rhs) => {
-            let lhs_val = match_expressions(lhs, variables, turtle)?;
-            let rhs_val = match_expressions(rhs, variables, turtle)?;
-            if lhs_val == rhs_val {
-                1.0
-            } else {
-                0.0
-            }
+            eval_logical_op(
+                lhs,
+                rhs,
+                variables,
+                turtle,
+                |a, b| if a == b { 1.0 } else { 0.0 },
+            )
         }
         Math::Lt(lhs, rhs) => {
-            let lhs_val = match_expressions(lhs, variables, turtle)?;
-            let rhs_val = match_expressions(rhs, variables, turtle)?;
-            if lhs_val < rhs_val {
-                1.0
-            } else {
-                0.0
-            }
+            eval_logical_op(
+                lhs,
+                rhs,
+                variables,
+                turtle,
+                |a, b| if a < b { 1.0 } else { 0.0 },
+            )
         }
         Math::Gt(lhs, rhs) => {
-            let lhs_val = match_expressions(lhs, variables, turtle)?;
-            let rhs_val = match_expressions(rhs, variables, turtle)?;
-            if lhs_val > rhs_val {
-                1.0
-            } else {
-                0.0
-            }
+            eval_logical_op(
+                lhs,
+                rhs,
+                variables,
+                turtle,
+                |a, b| if a > b { 1.0 } else { 0.0 },
+            )
         }
         Math::Ne(lhs, rhs) => {
-            let lhs_val = match_expressions(lhs, variables, turtle)?;
-            let rhs_val = match_expressions(rhs, variables, turtle)?;
-            if lhs_val != rhs_val {
+            eval_logical_op(
+                lhs,
+                rhs,
+                variables,
+                turtle,
+                |a, b| if a != b { 1.0 } else { 0.0 },
+            )
+        }
+        Math::And(lhs, rhs) => eval_logical_op(lhs, rhs, variables, turtle, |a, b| a * b),
+        Math::Or(lhs, rhs) => eval_logical_op(lhs, rhs, variables, turtle, |a, b| {
+            if a + b > 0.0 {
                 1.0
             } else {
                 0.0
             }
-        }
-        Math::And(lhs, rhs) => {
-            let lhs_val = match_expressions(lhs, variables, turtle)?;
-            let rhs_val = match_expressions(rhs, variables, turtle)?;
-            if lhs_val != 0.0 && rhs_val != 0.0 {
-                1.0
-            } else {
-                0.0
-            }
-        }
-        Math::Or(lhs, rhs) => {
-            let lhs_val = match_expressions(lhs, variables, turtle)?;
-            let rhs_val = match_expressions(rhs, variables, turtle)?;
-            if lhs_val != 0.0 || rhs_val != 0.0 {
-                1.0
-            } else {
-                0.0
-            }
-        }
-    };
-    Ok(res)
+        }),
+    }
 }
