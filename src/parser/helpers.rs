@@ -222,6 +222,17 @@ pub fn parse_conditional_blocks(
     Ok(block)
 }
 
+/// Parse mathematical expressions. Includes both basic and logical arithmetics.
+///
+/// # Example
+/// ```rust
+/// use std::collections::HashMap;
+/// let mut variables: HashMap<String, Expression> = HashMap::new();
+/// let tokens = vec!["+", "\"100", "\"100"];
+/// let mut curr_pos = 0;
+/// let expr = parse_maths(&tokens, &mut curr_pos, &mut variables);
+/// assert_eq!(expr, Ok(Expression::Math(Box::new(Math::Add(Expression::Float(100.0), Expression::Float(100.0)))));
+/// ```
 pub fn parse_maths(
     tokens: &[&str],
     curr_pos: &mut usize,

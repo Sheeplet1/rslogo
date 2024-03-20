@@ -1,3 +1,7 @@
+//! Control flow execution functions.
+//!
+//! Responsible for evaluating conditions and executing the block if the
+//! condition is true.
 use std::collections::HashMap;
 
 use crate::{
@@ -7,6 +11,7 @@ use crate::{
 
 use super::{execute::execute, matches::match_expressions, turtle::Turtle};
 
+/// Compares two expressions using a given comparator.
 fn comparator(
     lhs: &Expression,
     rhs: &Expression,
@@ -19,7 +24,27 @@ fn comparator(
     Ok(comparator(lhs_val, rhs_val))
 }
 
-/// Helper function to evaluate conditions and execute the block.
+/// Evaluates the condition and executes an `IF` block if the condition is true.
+///
+/// # Examples
+/// ```rust
+/// use std::collections::HashMap;
+/// use turtle::Turtle;
+/// use parser::ast::{ASTNode, Condition, Expression};
+/// use interpreter::control_flows::eval_exec_if;
+/// use interpreter::errors::ExecutionError;
+///
+/// let mut variables: HashMap<String, Expression> = HashMap::new();
+/// let mut turtle = Turtle::new();
+/// let condition = Condition::LessThan(
+///   Box::new(Expression::Float(8.0)),
+///   Box::new(Expression::Float(10.0)),
+/// );
+///
+/// let block = vec![ASTNode::Command(Command::Forward(Expression::Float(100.0)))];
+/// let result = eval_exec_if(&condition, &block, &mut turtle, &mut variables);
+/// assert_eq!(result, Ok(()));
+/// ```
 pub fn eval_exec_if(
     condition: &Condition,
     block: &Vec<ASTNode>,
@@ -35,6 +60,28 @@ pub fn eval_exec_if(
     Ok(())
 }
 
+/// Evaluates the condition and executes a `WHILE` block if the condition is true.
+///
+/// # Examples
+///
+/// ```rust
+/// use std::collections::HashMap;
+/// use turtle::Turtle;
+/// use parser::ast::{ASTNode, Condition, Expression};
+/// use interpreter::control_flows::eval_exec_while;
+/// use interpreter::errors::ExecutionError;
+///
+/// let mut variables: HashMap<String, Expression> = HashMap::new();
+/// let mut turtle = Turtle::new();
+/// let condition = Condition::LessThan(
+///    Box::new(Expression::Float(8.0)),
+///    Box::new(Expression::Float(10.0)),
+/// );
+///
+/// let block = vec![ASTNode::Command(Command::Forward(Expression::Float(100.0)))];
+/// let result = eval_exec_while(&condition, &block, &mut turtle, &mut variables);
+/// assert_eq!(result, Ok(()));
+/// ```
 pub fn eval_exec_while(
     condition: &Condition,
     block: &Vec<ASTNode>,
@@ -52,6 +99,7 @@ pub fn eval_exec_while(
     Ok(())
 }
 
+/// Determines if the condition is true or not.
 fn should_execute(
     condition: &Condition,
     turtle: &Turtle,

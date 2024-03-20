@@ -1,3 +1,7 @@
+//! Contains helper functions to match expressions to their values.
+//! Defaults to a f32 value and returns an ExecutionError if
+//! the expression is not parsable as a float.
+
 use std::collections::HashMap;
 
 use crate::{
@@ -21,7 +25,15 @@ fn match_queries(query: &Query, turtle: &Turtle) -> f32 {
 
 /// Helper function to match expressions to their values. This defaults for
 /// f32 values. We return an ExecutionError if the expression is not parsable
-/// as a float. This is because boolean values are handled elsewhere.
+/// as a float.
+///
+/// # Example
+///
+/// ```rust
+/// let expr = Expression::Float(1.0);
+/// let res = match_expressions(&expr, &HashMap::new(), &Turtle::new());
+/// assert_eq!(res, Ok(1.0));
+/// ```
 pub fn match_expressions(
     expr: &Expression,
     variables: &HashMap<String, Expression>,
@@ -34,13 +46,13 @@ pub fn match_expressions(
         // TODO: What is the point of this is we are just casting it to f32?
         Expression::Usize(val) => Ok(*val as f32),
         Expression::Query(query) => Ok(match_queries(query, turtle)),
-        Expression::Variable(var) => get_f32_value(var, variables, turtle),
+        Expression::Variable(var) => get_var_val(var, variables, turtle),
         Expression::Math(expr) => Ok(eval_math(expr, variables, turtle)?),
     }
 }
 
-/// Helper function to get the value of a variable. Defaults to f32.
-fn get_f32_value(
+/// Gets the value of a variable from the variables hashmap.
+fn get_var_val(
     var: &str,
     variables: &HashMap<String, Expression>,
     turtle: &Turtle,
@@ -65,6 +77,17 @@ fn get_f32_value(
     }
 }
 
+/// Evaluates a Math expression and returns the result. Math expressions are
+/// basic arithmetics or logical operations.
+///
+/// # Example
+///
+/// ```rust
+/// let expr = Math::Add(Box::new(Expression::Float(1.0)), Box::new(Expression::Float(2.0)));
+///
+/// let res = eval_math(&expr, &HashMap::new(), &Turtle::new());
+/// assert_eq!(res, Ok(3.0));
+/// ```
 fn eval_math(
     expr: &Math,
     variables: &HashMap<String, Expression>,
