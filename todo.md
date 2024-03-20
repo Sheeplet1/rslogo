@@ -2,138 +2,91 @@
 
 ## Current
 
-- [ ] Parsing for mathematical expressions
-  - [ ] Evaluation
-
-```
-If token is an operator (+, -, \*, /) {
-    Lets append until end of mathematical expression into a vector
-    Reverse the vector
-    Evaluate via reverse polish notation
-}
-
-==============================================================================
-PENDOWN
-FORWARD + "5 "3
-
-AST: [
-    Command(
-        Pendown
-    ),
-
-    Command(
-        Forward(
-            Addition(
-                Float(5.0),
-                Float(3.0)
-            )
-        )
-    )
-]
-
-==============================================================================
-PENDOWN
-IF AND GT "4 "2 LT "3 "6 [
+```5_00
+TO Box
    FORWARD "10
+   LEFT "10
+   BACK "10
+   RIGHT "10
+END
+
+PENDOWN
+
+MAKE "BOXLINE "2
+
+WHILE LT :BOXLINE "60 [
+      TURN "20
+
+      SETPENCOLOR + COLOR "2
+
+      Box
+
+      IF LT "8 COLOR [
+         SETPENCOLOR "2
+      ]
+
+      ADDASSIGN "BOXLINE "2
 ]
 
-AST: [
-    Command(
-        Pendown
-    ),
+let ast = vec![
+    // Procedure Definition: Box
+    ASTNode::ProcedureDefinition {
+        name: "Box".to_string(),
+        parameters: vec![],
+        body: vec![
+            ASTNode::Command(Command::Forward(Expression::Float(10.0))),
+            ASTNode::Command(Command::Left(Expression::Float(10.0))),
+            ASTNode::Command(Command::Back(Expression::Float(10.0))),
+            ASTNode::Command(Command::Right(Expression::Float(10.0))),
+        ],
+    },
 
-    ControlFlow (
-        If {
-            condition: And(
-                GreaterThan(
-                    Float(4.0),
-                    Float(2.0),
-                ),
-                LessThan(
-                    Float(3.0),
-                    Float(6.0)
-                )
-            )
-            block: [
-                Forward(
-                    Float(10.0)
-                )
-            ]
-        }
-    )
-]
+    // PenDown
+    ASTNode::Command(Command::PenDown),
 
-==============================================================================
-// ((3 < 3 + 1) && (9 > 8) || (8 / 2 < 8 / 3)
-MAKE "x OR AND LT "3 + "3 "1 GT "9 "8 LT / "8 "2 / "8 "3
+    // Make "BOXLINE" "2"
+    ASTNode::Command(Command::Make("BOXLINE".to_string(), Expression::Float(2.0))),
 
-IF :x [
-   PENDOWN
-]
+    // While Loop
+    ASTNode::ControlFlow(ControlFlow::While {
 
-TURN "135
-FORWARD "20
-LEFT "100
-
-AST: [
-    Command(
-        Make(
-            "x",
-            Or(
-                And(
-                    LessThan(
-                        Float(3.0),
-                        Addition(
-                            Float(3.0)
-                            Float(1.0)
-                        )
-                    ),
-                    GreaterThan(
-                        Float(9.0),
-                        Float(8.0)
-                    )
-                ),
-                LessThan(
-                    Division(
-                        Float(8.0),
-                        Float(2.0)
-                    ),
-                    Division(
-                        Float(8.0),
-                        Float(3.0)
-                    )
-                )
-            )
+        condition: Condition::LessThan(
+            Expression::Variable("BOXLINE".to_string()),
+            Expression::Float(60.0),
         ),
-    ),
 
-    ControlFlow(
-        If {
-            condition: Variable("x"),
-            block: [
-                Command(Pendown)
-            ]
-        }
-    ),
+        block: vec![
+            ASTNode::Command(Command::Turn(Expression::Float(20.0))),
 
-    Command(
-        Turn(
-            Number(135)
-        )
-    ),
+            ASTNode::Command(Command::SetPenColor(Expression::Math(Box::new(
+                Math::Add(
+                    Expression::Query(Query::Color),
+                    Expression::Float(2.0),
+                )
+            )))),
 
-    Command(
-        Forward(
-            Float(20.0)
-        )
-    ),
+            // Procedure Call: Box
+            ASTNode::ProcedureCall {
+                name: "Box".to_string(),
+                arguments: vec![],
+            },
 
-    Command(
-        Left(
-            Float(100.0)
-        )
-    )
-]
+            // If Statement
+            ASTNode::ControlFlow(ControlFlow::If {
+                condition: Condition::LessThan(
+                    Expression::Float(8.0),
+                    Expression::Query(Query::Color),
+                ),
+                block: vec![
+                    ASTNode::Command(Command::SetPenColor(Expression::Float(2.0))),
+                ],
+            }),
+
+            // AddAssign "BOXLINE" "2"
+            ASTNode::Command(Command::AddAssign("BOXLINE".to_string(), Expression::Float(2.0))),
+        ],
+    }),
+];
 
 ```
 
