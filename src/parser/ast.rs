@@ -21,6 +21,11 @@ pub enum Command {
     SetY(Expression),
     Make(String, Expression),
     AddAssign(String, Expression),
+    Procedure {
+        name: String,
+        arg: Vec<Expression>,
+        block: Vec<ASTNode>,
+    },
 }
 
 #[derive(Debug, Clone)]

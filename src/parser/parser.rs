@@ -49,57 +49,47 @@ pub fn parse_tokens(
                 ast.push(ASTNode::Command(Command::PenDown));
             }
             "FORWARD" => {
-                *curr_pos += 1;
-                let expr = match_parse(&tokens, curr_pos, variables)?;
+                let expr = match_parse(&tokens, &mut (*curr_pos + 1), variables)?;
                 ast.push(ASTNode::Command(Command::Forward(expr)));
             }
             "BACK" => {
-                *curr_pos += 1;
-                let expr = match_parse(&tokens, curr_pos, variables)?;
+                let expr = match_parse(&tokens, &mut (*curr_pos + 1), variables)?;
                 ast.push(ASTNode::Command(Command::Back(expr)));
             }
             "LEFT" => {
-                *curr_pos += 1;
-                let expr = match_parse(&tokens, curr_pos, variables)?;
+                let expr = match_parse(&tokens, &mut (*curr_pos + 1), variables)?;
                 ast.push(ASTNode::Command(Command::Left(expr)));
             }
             "RIGHT" => {
-                *curr_pos += 1;
-                let expr = match_parse(&tokens, curr_pos, variables)?;
+                let expr = match_parse(&tokens, &mut (*curr_pos + 1), variables)?;
                 ast.push(ASTNode::Command(Command::Right(expr)));
             }
             "SETHEADING" => {
-                *curr_pos += 1;
-                let expr = match_parse(&tokens, curr_pos, variables)?;
+                let expr = match_parse(&tokens, &mut (*curr_pos + 1), variables)?;
                 ast.push(ASTNode::Command(Command::SetHeading(expr)));
             }
             "SETX" => {
-                *curr_pos += 1;
-                let expr = match_parse(&tokens, curr_pos, variables)?;
+                let expr = match_parse(&tokens, &mut (*curr_pos + 1), variables)?;
                 ast.push(ASTNode::Command(Command::SetX(expr)));
             }
             "SETY" => {
-                *curr_pos += 1;
-                let expr = match_parse(&tokens, curr_pos, variables)?;
+                let expr = match_parse(&tokens, &mut (*curr_pos + 1), variables)?;
                 ast.push(ASTNode::Command(Command::SetY(expr)));
             }
             "SETPENCOLOR" => {
-                *curr_pos += 1;
-                let expr = match_parse(&tokens, curr_pos, variables)?;
+                let expr = match_parse(&tokens, &mut (*curr_pos + 1), variables)?;
                 ast.push(ASTNode::Command(Command::SetPenColor(expr)));
             }
             "TURN" => {
-                *curr_pos += 1;
-                let expr = match_parse(&tokens, curr_pos, variables)?;
+                let expr = match_parse(&tokens, &mut (*curr_pos + 1), variables)?;
                 ast.push(ASTNode::Command(Command::Turn(expr)));
             }
             "MAKE" => {
                 *curr_pos += 1;
                 let var_name = tokens[*curr_pos].trim_start_matches('"');
 
-                *curr_pos += 1;
                 let expr: Result<Expression, ParseError> =
-                    match_parse(&tokens, curr_pos, variables);
+                    match_parse(&tokens, &mut (*curr_pos + 1), variables);
 
                 // Now that expr is of type `Expression`, we can insert it into the
                 // variables HashMap, making it easier on the execution phase.
@@ -127,8 +117,7 @@ pub fn parse_tokens(
                     });
                 }
 
-                *curr_pos += 1;
-                let expr = match_parse(&tokens, curr_pos, variables)?;
+                let expr = match_parse(&tokens, &mut (*curr_pos + 1), variables)?;
 
                 ast.push(ASTNode::Command(Command::AddAssign(
                     var_name.to_string(),
@@ -143,7 +132,7 @@ pub fn parse_tokens(
             }
             "WHILE" => {
                 *curr_pos += 1; // Skip the WHILE token
-                let condition = parse_conditions(&tokens, &mut *curr_pos, variables)?;
+                let condition = parse_conditions(&tokens, &mut (*curr_pos + 1), variables)?;
                 let block = parse_conditional_blocks(&tokens, &mut *curr_pos, variables)?;
                 ast.push(ASTNode::ControlFlow(ControlFlow::While {
                     condition,
@@ -154,6 +143,14 @@ pub fn parse_tokens(
                 // This is the end of a conditional block, we can skip this token
                 // and return the ast directly.
                 return Ok(ast);
+            }
+            "TO" => {
+                // Start of a procedure definition
+                todo!()
+            }
+            "END" => {
+                // End of a procedure definition
+                todo!()
             }
             _ => {
                 return Err(ParseError {

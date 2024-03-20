@@ -2,140 +2,111 @@
 
 ## Current
 
-- [ ] Parsing for mathematical expressions
-  - [ ] Evaluation
-
 ```
-If token is an operator (+, -, \*, /) {
-    Lets append until end of mathematical expression into a vector
-    Reverse the vector
-    Evaluate via reverse polish notation
-}
 
-==============================================================================
-PENDOWN
-FORWARD + "5 "3
-
-AST: [
-    Command(
-        Pendown
-    ),
-
-    Command(
-        Forward(
-            Addition(
-                Float(5.0),
-                Float(3.0)
-            )
-        )
-    )
-]
-
-==============================================================================
-PENDOWN
-IF AND GT "4 "2 LT "3 "6 [
+TO Box
    FORWARD "10
+   LEFT "10
+   BACK "10
+   RIGHT "10
+END
+
+PENDOWN
+
+MAKE "BOXLINE "2
+
+WHILE LT :BOXLINE "60 [
+      TURN "20
+
+      SETPENCOLOR + COLOR "2
+
+      Box
+
+      IF LT "8 COLOR [
+         SETPENCOLOR "2
+      ]
+
+      ADDASSIGN "BOXLINE "2
 ]
 
 AST: [
+    Procedure {
+        name: "Box",
+        args: [],
+        body: [
+            Command(
+                Forward(Float(10.0))
+            ),
+            Command(
+                Left(Float(10.0))
+            )
+            Command(
+                Back(Float(10.0))
+            )
+            Command(
+                Right(Float(10.0))
+            )
+        ]
+    },
+
     Command(
         Pendown
-    ),
-
-    ControlFlow (
-        If {
-            condition: And(
-                GreaterThan(
-                    Float(4.0),
-                    Float(2.0),
-                ),
-                LessThan(
-                    Float(3.0),
-                    Float(6.0)
-                )
-            )
-            block: [
-                Forward(
-                    Float(10.0)
-                )
-            ]
-        }
     )
-]
 
-==============================================================================
-// ((3 < 3 + 1) && (9 > 8) || (8 / 2 < 8 / 3)
-MAKE "x OR AND LT "3 + "3 "1 GT "9 "8 LT / "8 "2 / "8 "3
-
-IF :x [
-   PENDOWN
-]
-
-TURN "135
-FORWARD "20
-LEFT "100
-
-AST: [
     Command(
         Make(
-            "x",
-            Or(
-                And(
-                    LessThan(
-                        Float(3.0),
-                        Addition(
-                            Float(3.0)
-                            Float(1.0)
-                        )
-                    ),
-                    GreaterThan(
-                        Float(9.0),
-                        Float(8.0)
-                    )
-                ),
-                LessThan(
-                    Division(
-                        Float(8.0),
-                        Float(2.0)
-                    ),
-                    Division(
-                        Float(8.0),
-                        Float(3.0)
-                    )
-                )
-            )
-        ),
-    ),
-
-    ControlFlow(
-        If {
-            condition: Variable("x"),
-            block: [
-                Command(Pendown)
-            ]
-        }
-    ),
-
-    Command(
-        Turn(
-            Number(135)
-        )
-    ),
-
-    Command(
-        Forward(
-            Float(20.0)
-        )
-    ),
-
-    Command(
-        Left(
-            Float(100.0)
+            "BOXLINE",
+            Float(2.0)
         )
     )
+
+    ControlFlow(
+        While {
+            condition: LessThan(
+                Variable("BOXLINE"),
+                Float(60.0)
+            ),
+            block: [
+                Command(
+                    Turn(Float(20.0))
+                )
+
+                Command(
+                    SetPenColor(
+                        Add(
+                            Query(COLOR),
+                            Float(2.0)
+                        )
+                    )
+                )
+
+                Command(
+                    ProcedureCall("Box", [])
+                )
+
+                ControlFlow(
+                    If {
+                        condition: LessThan(Float(8.0), Query(Color)),
+                        block: [Command(SetPenColor(2.0))]
+                    }
+                )
+
+                Command(AddAssign(Variable("BOXLINE"), Float(2.0)))
+            ]
+        }
+    )
 ]
+```
+
+Key Words are `TO` and `END` to define a procedure.
 
 ```
+TO <name> <"vec of args>
+    Block of commands
+END
+```
+
+We know arguments has ended once there is a command
 
 ## Backlog
 

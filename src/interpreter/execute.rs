@@ -182,6 +182,9 @@ pub fn execute(
                         });
                     }
                 }
+                Command::Procedure { name, arg, block } => {
+                    todo!()
+                }
             },
             ASTNode::ControlFlow(control_flow) => match control_flow {
                 ControlFlow::If { condition, block } => {
