@@ -30,11 +30,12 @@ pub fn match_parse(
     tokens: &[&str],
     pos: &mut usize,
     vars: &mut HashMap<String, Expression>,
+    is_proc: bool,
 ) -> Result<Expression, ParseError> {
     if tokens[*pos].starts_with('"') {
         // Normal expressions
         parse_expression(tokens, *pos).map(Expression::Float)
-    } else if tokens[*pos].starts_with(':') {
+    } else if tokens[*pos].starts_with(':') && !is_proc {
         // Variables
         let token = tokens[*pos].trim_start_matches(':');
         if vars.contains_key(token) {
@@ -47,11 +48,15 @@ pub fn match_parse(
                 ),
             })
         }
+    } else if tokens[*pos].starts_with(':') && is_proc {
+        // Arguments
+        let token = tokens[*pos].trim_start_matches(':');
+        Ok(Expression::Arg(token.to_string()))
     } else if matches!(
         tokens[*pos],
         "+" | "-" | "*" | "/" | "EQ" | "LT" | "GT" | "NE" | "AND" | "OR"
     ) {
-        parse_maths(tokens, pos, vars)
+        parse_maths(tokens, pos, vars, is_proc)
     } else {
         parse_query(tokens, *pos).map(Expression::Query)
     }
@@ -133,22 +138,23 @@ pub fn parse_conditions(
     tokens: &[&str],
     curr_pos: &mut usize,
     vars: &mut HashMap<String, Expression>,
+    is_proc: bool,
 ) -> Result<Condition, ParseError> {
     let condition_idx = *curr_pos;
 
     // If condition_idx is not an condition but a boolean, we return early.
     if matches!(tokens[condition_idx], "EQ" | "LT" | "GT" | "AND" | "OR") {
-        let res = match_parse(tokens, curr_pos, vars)
+        let res = match_parse(tokens, curr_pos, vars, is_proc)
             .map(|expr| Condition::Equals(expr, Expression::Float(1.0)));
         *curr_pos += 1;
         return res;
     }
 
     *curr_pos += 1;
-    let expr_1 = match_parse(tokens, curr_pos, vars)?;
+    let expr_1 = match_parse(tokens, curr_pos, vars, is_proc)?;
 
     *curr_pos += 1;
-    let expr_2 = match_parse(tokens, curr_pos, vars)?;
+    let expr_2 = match_parse(tokens, curr_pos, vars, is_proc)?;
 
     *curr_pos += 1;
     let condition = match tokens[condition_idx] {
@@ -186,6 +192,7 @@ pub fn parse_conditional_blocks(
     tokens: &[&str],
     curr_pos: &mut usize,
     vars: &mut HashMap<String, Expression>,
+    is_proc: bool,
 ) -> Result<Vec<ASTNode>, ParseError> {
     if tokens[*curr_pos] != "[" {
         return Err(ParseError {
@@ -200,7 +207,7 @@ pub fn parse_conditional_blocks(
     let mut block: Vec<ASTNode> = Vec::new();
 
     while *curr_pos < tokens.len() && tokens[*curr_pos] != "]" {
-        let ast = parse_tokens(tokens.to_vec(), curr_pos, vars)?;
+        let ast = parse_tokens(tokens.to_vec(), curr_pos, vars, is_proc)?;
         block.extend(ast);
     }
 
@@ -228,6 +235,7 @@ pub fn parse_maths(
     tokens: &[&str],
     curr_pos: &mut usize,
     vars: &mut HashMap<String, Expression>,
+    is_proc: bool,
 ) -> Result<Expression, ParseError> {
     // Maths will usually be in the form of: <operator> <expression> <expression>
     // operators will be +, -, *, /
@@ -236,9 +244,9 @@ pub fn parse_maths(
             let operator = tokens[*curr_pos];
 
             *curr_pos += 1;
-            let expr_1 = match_parse(tokens, curr_pos, vars)?;
+            let expr_1 = match_parse(tokens, curr_pos, vars, is_proc)?;
             *curr_pos += 1;
-            let expr_2 = match_parse(tokens, curr_pos, vars)?;
+            let expr_2 = match_parse(tokens, curr_pos, vars, is_proc)?;
 
             match operator {
                 "+" => Expression::Math(Box::new(Math::Add(expr_1, expr_2))),
@@ -267,4 +275,35 @@ pub fn parse_maths(
     };
 
     Ok(res)
+}
+
+pub fn parse_procedure(
+    tokens: &[&str],
+    curr_pos: &mut usize,
+    vars: &mut HashMap<String, Expression>,
+) -> Result<ASTNode, ParseError> {
+    if tokens[*curr_pos] != "TO" {
+        return Err(ParseError {
+            msg: format!("Expected start of a procedure: {:?}", tokens[*curr_pos]),
+        });
+    }
+    *curr_pos += 1;
+
+    let name = tokens[*curr_pos].to_string();
+    *curr_pos += 1;
+
+    let mut args: Vec<String> = Vec::new();
+    while *curr_pos < tokens.len() && tokens[*curr_pos].starts_with('"') {
+        let token = tokens[*curr_pos].trim_start_matches('"');
+        args.push(token.to_string());
+        *curr_pos += 1;
+    }
+
+    let mut block: Vec<ASTNode> = Vec::new();
+    while *curr_pos < tokens.len() && tokens[*curr_pos] != "END" {
+        let ast = parse_tokens(tokens.to_vec(), curr_pos, vars, true)?;
+        block.extend(ast);
+    }
+
+    Ok(ASTNode::ProcedureDefinition { name, args, block })
 }

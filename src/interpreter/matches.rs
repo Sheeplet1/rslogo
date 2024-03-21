@@ -47,6 +47,7 @@ pub fn match_expressions(
         Expression::Query(query) => Ok(match_queries(query, turtle)),
         Expression::Variable(var) => get_var_val(var, variables, turtle),
         Expression::Math(expr) => Ok(eval_math(expr, variables, turtle)?),
+        Expression::Arg(arg) => todo!(),
     }
 }
 

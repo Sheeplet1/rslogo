@@ -160,6 +160,12 @@ pub fn execute(
                     eval_exec_while(condition, block, turtle, vars)?;
                 }
             },
+            ASTNode::ProcedureDefinition { .. } => {
+                todo!()
+            }
+            ASTNode::ProcedureCall { .. } => {
+                todo!()
+            }
         }
     }
 

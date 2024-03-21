@@ -64,7 +64,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut vars: HashMap<String, Expression> = HashMap::new();
     let tokens = tokenize_script(&contents);
-    let ast = parse_tokens(tokens, &mut 0, &mut vars)?;
+    let ast = parse_tokens(tokens, &mut 0, &mut vars, false)?;
+    println!("ast: {:#?}", ast);
     execute(&ast, &mut turtle, &mut vars)?;
 
     match image_path.extension().and_then(|s| s.to_str()) {

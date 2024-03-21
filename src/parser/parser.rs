@@ -4,17 +4,15 @@
 //! into ASTNode and Expression types. The ASTNode type is used to represent the
 //! Abstract Syntax Tree (AST) of the Logo script, and the Expression type is
 //! used to represent the different types of expressions that can be parsed from
-//! the Logo script, such as floats, numbers, queries, and variables.
+//! the Logo script, such as floats, numbers, queries, and variables, is_proc.
 
 use std::collections::HashMap;
 
 use crate::{errors::ParseError, parser::ast::ControlFlow};
 
 use super::{
-    ast::ASTNode,
-    ast::Command,
-    ast::Expression,
-    helpers::{match_parse, parse_conditional_blocks, parse_conditions},
+    ast::{ASTNode, Command, Expression},
+    helpers::{match_parse, parse_conditional_blocks, parse_conditions, parse_procedure},
 };
 
 /// Parse tokens into an Abstract Syntax Tree (AST).
@@ -27,8 +25,8 @@ use super::{
 /// // Tokens is generated from the tokenize_script function.
 /// tokens = vec!["PENDOWN", "FORWARD", "\"100"]
 ///
-/// let mut variables: HashMap<String, Expression> = HashMap::new();
-/// let ast = parse_tokens(tokens, &mut variables)?;
+/// let mut variables, is_proc: HashMap<String, Expression> = HashMap::new();
+/// let ast = parse_tokens(tokens, &mut variables, is_proc)?;
 ///
 /// assert_eq!(ast, vec![ASTNode::Command(Command::PenDown),
 ///         ASTNode::Command(Command::Forward(Expression::Float(100.0)))]);
@@ -37,6 +35,7 @@ pub fn parse_tokens(
     tokens: Vec<&str>,
     curr_pos: &mut usize,
     variables: &mut HashMap<String, Expression>,
+    is_proc: bool,
 ) -> Result<Vec<ASTNode>, ParseError> {
     let mut ast = Vec::new();
 
@@ -50,47 +49,47 @@ pub fn parse_tokens(
             }
             "FORWARD" => {
                 *curr_pos += 1;
-                let expr = match_parse(&tokens, curr_pos, variables)?;
+                let expr = match_parse(&tokens, curr_pos, variables, is_proc)?;
                 ast.push(ASTNode::Command(Command::Forward(expr)));
             }
             "BACK" => {
                 *curr_pos += 1;
-                let expr = match_parse(&tokens, curr_pos, variables)?;
+                let expr = match_parse(&tokens, curr_pos, variables, is_proc)?;
                 ast.push(ASTNode::Command(Command::Back(expr)));
             }
             "LEFT" => {
                 *curr_pos += 1;
-                let expr = match_parse(&tokens, curr_pos, variables)?;
+                let expr = match_parse(&tokens, curr_pos, variables, is_proc)?;
                 ast.push(ASTNode::Command(Command::Left(expr)));
             }
             "RIGHT" => {
                 *curr_pos += 1;
-                let expr = match_parse(&tokens, curr_pos, variables)?;
+                let expr = match_parse(&tokens, curr_pos, variables, is_proc)?;
                 ast.push(ASTNode::Command(Command::Right(expr)));
             }
             "SETHEADING" => {
                 *curr_pos += 1;
-                let expr = match_parse(&tokens, curr_pos, variables)?;
+                let expr = match_parse(&tokens, curr_pos, variables, is_proc)?;
                 ast.push(ASTNode::Command(Command::SetHeading(expr)));
             }
             "SETX" => {
                 *curr_pos += 1;
-                let expr = match_parse(&tokens, curr_pos, variables)?;
+                let expr = match_parse(&tokens, curr_pos, variables, is_proc)?;
                 ast.push(ASTNode::Command(Command::SetX(expr)));
             }
             "SETY" => {
                 *curr_pos += 1;
-                let expr = match_parse(&tokens, curr_pos, variables)?;
+                let expr = match_parse(&tokens, curr_pos, variables, is_proc)?;
                 ast.push(ASTNode::Command(Command::SetY(expr)));
             }
             "SETPENCOLOR" => {
                 *curr_pos += 1;
-                let expr = match_parse(&tokens, curr_pos, variables)?;
+                let expr = match_parse(&tokens, curr_pos, variables, is_proc)?;
                 ast.push(ASTNode::Command(Command::SetPenColor(expr)));
             }
             "TURN" => {
                 *curr_pos += 1;
-                let expr = match_parse(&tokens, curr_pos, variables)?;
+                let expr = match_parse(&tokens, curr_pos, variables, is_proc)?;
                 ast.push(ASTNode::Command(Command::Turn(expr)));
             }
             "MAKE" => {
@@ -99,10 +98,10 @@ pub fn parse_tokens(
 
                 *curr_pos += 1;
                 let expr: Result<Expression, ParseError> =
-                    match_parse(&tokens, curr_pos, variables);
+                    match_parse(&tokens, curr_pos, variables, is_proc);
 
                 // Now that expr is of type `Expression`, we can insert it into the
-                // variables HashMap, making it easier on the execution phase.
+                // variables, is_proc HashMap, making it easier on the execution phase.
                 match expr {
                     Ok(expr) => {
                         variables.insert(var_name.to_string(), expr.clone());
@@ -112,7 +111,7 @@ pub fn parse_tokens(
                 };
             }
             "ADDASSIGN" => {
-                // ADDASSIGN can only work on variables
+                // ADDASSIGN can only work on variables, is_proc
                 *curr_pos += 1;
                 if !tokens[*curr_pos].starts_with('"') {
                     return Err(ParseError {
@@ -128,7 +127,7 @@ pub fn parse_tokens(
                 }
 
                 *curr_pos += 1;
-                let expr = match_parse(&tokens, curr_pos, variables)?;
+                let expr = match_parse(&tokens, curr_pos, variables, is_proc)?;
 
                 ast.push(ASTNode::Command(Command::AddAssign(
                     var_name.to_string(),
@@ -137,14 +136,14 @@ pub fn parse_tokens(
             }
             "IF" => {
                 *curr_pos += 1; // Skip the IF token
-                let condition = parse_conditions(&tokens, &mut *curr_pos, variables)?;
-                let block = parse_conditional_blocks(&tokens, &mut *curr_pos, variables)?;
+                let condition = parse_conditions(&tokens, &mut *curr_pos, variables, is_proc)?;
+                let block = parse_conditional_blocks(&tokens, &mut *curr_pos, variables, is_proc)?;
                 ast.push(ASTNode::ControlFlow(ControlFlow::If { condition, block }));
             }
             "WHILE" => {
                 *curr_pos += 1; // Skip the WHILE token
-                let condition = parse_conditions(&tokens, &mut *curr_pos, variables)?;
-                let block = parse_conditional_blocks(&tokens, &mut *curr_pos, variables)?;
+                let condition = parse_conditions(&tokens, &mut *curr_pos, variables, is_proc)?;
+                let block = parse_conditional_blocks(&tokens, &mut *curr_pos, variables, is_proc)?;
                 ast.push(ASTNode::ControlFlow(ControlFlow::While {
                     condition,
                     block,
@@ -153,6 +152,15 @@ pub fn parse_tokens(
             "]" => {
                 // This is the end of a conditional block, we can skip this token
                 // and return the ast directly.
+                return Ok(ast);
+            }
+            "TO" => {
+                let expr = parse_procedure(&tokens, curr_pos, variables)?;
+                println!("Procedure: {:#?}", expr);
+                ast.push(expr);
+            }
+            "END" => {
+                // End of a procedure block.
                 return Ok(ast);
             }
             _ => {

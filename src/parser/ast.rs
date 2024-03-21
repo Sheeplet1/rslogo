@@ -4,6 +4,15 @@
 pub enum ASTNode {
     Command(Command),
     ControlFlow(ControlFlow),
+    ProcedureDefinition {
+        name: String,
+        args: Vec<String>,
+        block: Vec<ASTNode>,
+    },
+    ProcedureCall {
+        name: String,
+        args: Vec<Expression>,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -14,6 +23,7 @@ pub enum Expression {
     Query(Query),
     Variable(String),
     Math(Box<Math>),
+    Arg(String),
 }
 
 #[derive(Debug, Clone)]
