@@ -28,3 +28,24 @@ pub fn tokenize_script(contents: &str) -> Vec<&str> {
         .flat_map(|line| line.split_whitespace())
         .collect()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_tokenize_script() {
+        let script = r#"
+        PENDOWN
+
+        SETPENCOLOR "1
+        FORWARD "100
+        "#;
+
+        let tokens = tokenize_script(script);
+        assert_eq!(
+            tokens,
+            vec!["PENDOWN", "SETPENCOLOR", "\"1", "FORWARD", "\"100"]
+        );
+    }
+}

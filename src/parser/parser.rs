@@ -166,3 +166,123 @@ pub fn parse_tokens(
 
     Ok(ast)
 }
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+
+    use crate::parser::ast::{Condition, Query};
+
+    use super::*;
+
+    #[test]
+    fn test_parse_tokens() {
+        let mut variables: HashMap<String, Expression> = HashMap::new();
+        let mut curr_pos = 0;
+
+        let tokens = vec!["PENUP", "PENDOWN", "FORWARD", "\"100"];
+        let ast = parse_tokens(tokens, &mut curr_pos, &mut variables).unwrap();
+
+        assert_eq!(
+            ast,
+            vec![
+                ASTNode::Command(Command::PenUp),
+                ASTNode::Command(Command::PenDown),
+                ASTNode::Command(Command::Forward(Expression::Float(100.0)))
+            ]
+        );
+    }
+
+    #[test]
+    fn test_parse_tokens_with_make() {
+        let mut variables: HashMap<String, Expression> = HashMap::new();
+        let mut curr_pos = 0;
+
+        let tokens = vec!["MAKE", "\"x", "\"100"];
+        let ast = parse_tokens(tokens, &mut curr_pos, &mut variables).unwrap();
+
+        assert_eq!(
+            ast,
+            vec![ASTNode::Command(Command::Make(
+                "x".to_string(),
+                Expression::Float(100.0)
+            ))]
+        );
+    }
+
+    #[test]
+    fn test_parse_tokens_with_add_assign() {
+        let mut variables: HashMap<String, Expression> = HashMap::new();
+        let mut curr_pos = 0;
+
+        let tokens = vec!["MAKE", "\"x", "\"100", "ADDASSIGN", "\"x", "\"100"];
+        let ast = parse_tokens(tokens, &mut curr_pos, &mut variables).unwrap();
+
+        assert_eq!(
+            ast,
+            vec![
+                ASTNode::Command(Command::Make("x".to_string(), Expression::Float(100.0))),
+                ASTNode::Command(Command::AddAssign(
+                    "x".to_string(),
+                    Expression::Float(100.0)
+                ))
+            ]
+        );
+    }
+
+    #[test]
+    fn test_parse_tokens_with_if() {
+        let mut variables: HashMap<String, Expression> = HashMap::new();
+        let mut curr_pos = 0;
+
+        let tokens = vec!["IF", "EQ", "XCOR", "\"100", "[", "FORWARD", "\"100", "]"];
+        let ast = parse_tokens(tokens, &mut curr_pos, &mut variables).unwrap();
+
+        assert_eq!(
+            ast,
+            vec![ASTNode::ControlFlow(ControlFlow::If {
+                condition: Condition::Equals(
+                    Expression::Query(Query::XCor),
+                    Expression::Float(100.0)
+                ),
+                block: vec![ASTNode::Command(Command::Forward(Expression::Float(100.0)))]
+            })]
+        );
+    }
+
+    #[test]
+    fn test_parse_tokens_with_while() {
+        let mut variables: HashMap<String, Expression> = HashMap::new();
+        let mut curr_pos = 0;
+
+        let tokens = vec!["WHILE", "EQ", "XCOR", "\"100", "[", "FORWARD", "\"100", "]"];
+        let ast = parse_tokens(tokens, &mut curr_pos, &mut variables).unwrap();
+
+        assert_eq!(
+            ast,
+            vec![ASTNode::ControlFlow(ControlFlow::While {
+                condition: Condition::Equals(
+                    Expression::Query(Query::XCor),
+                    Expression::Float(100.0)
+                ),
+                block: vec![ASTNode::Command(Command::Forward(Expression::Float(100.0)))]
+            })]
+        );
+    }
+
+    #[test]
+    fn test_parse_tokens_with_invalid_expression() {
+        let mut variables: HashMap<String, Expression> = HashMap::new();
+        let mut curr_pos = 0;
+
+        let tokens = vec!["FORWARD", "\"10x"];
+        let ast = parse_tokens(tokens, &mut curr_pos, &mut variables).unwrap_err();
+
+        assert_eq!(
+            ast,
+            ParseError {
+                msg: "Failed to parse expression: \"\\\"10x\"".to_string()
+            }
+        );
+    }
+}

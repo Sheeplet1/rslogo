@@ -15,7 +15,7 @@ pub mod errors;
 mod interpreter;
 mod parser;
 
-use interpreter::execute::execute;
+use interpreter::{execute::execute, turtle::Turtle};
 use parser::{ast::Expression, parser::parse_tokens, tokenise::tokenize_script};
 use std::{collections::HashMap, error::Error, fs::File, io::Read};
 
@@ -53,7 +53,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut contents = String::new();
     file.read_to_string(&mut contents).unwrap();
 
-    let mut turtle = interpreter::turtle::Turtle {
+    let mut turtle = Turtle {
         x: (width / 2) as f32,
         y: (height / 2) as f32,
         heading: 0,

@@ -8,6 +8,7 @@
 //! - `ExtendedUnsvgError`: Represents an error that occurs during usage of the unsvg library.
 //! - `ExecutionError`: Represents an error that occurs during the execution of the library.
 
+#[derive(PartialEq)]
 pub struct ParseError {
     pub msg: String,
     // pub line: usize,
@@ -51,5 +52,48 @@ impl std::error::Error for ExecutionError {}
 impl std::fmt::Display for ExecutionError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "Execution error: {}", self.msg)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_error() {
+        let parse_error = ParseError {
+            msg: "Parse error".to_string(),
+        };
+        assert_eq!(format!("{}", parse_error), "Parse error: Parse error");
+    }
+
+    #[test]
+    fn test_parse_debug() {
+        let parse_error = ParseError {
+            msg: "Parse error".to_string(),
+        };
+        assert_eq!(format!("{:?}", parse_error), "Parse error: Parse error")
+    }
+
+    #[test]
+    fn test_extended_unsvg_error() {
+        let extended_unsvg_error = ExtendedUnsvgError {
+            msg: "Extended unsvg error".to_string(),
+        };
+        assert_eq!(
+            format!("{}", extended_unsvg_error),
+            ":9 Extended unsvg error"
+        );
+    }
+
+    #[test]
+    fn test_execution_error() {
+        let execution_error = ExecutionError {
+            msg: "Execution error".to_string(),
+        };
+        assert_eq!(
+            format!("{}", execution_error),
+            "Execution error: Execution error"
+        );
     }
 }

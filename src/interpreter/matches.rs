@@ -211,3 +211,30 @@ fn eval_math(
         }),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+
+    use unsvg::Image;
+
+    use super::*;
+    use crate::parser::ast::Expression;
+
+    #[test]
+    fn test_get_var_val() {
+        let mut variables = HashMap::new();
+        variables.insert("x".to_string(), Expression::Float(1.0));
+        let mut image = Image::new(100, 100);
+        let turtle = Turtle {
+            x: (100 / 2) as f32,
+            y: (100 / 2) as f32,
+            heading: 0,
+            pen_down: false,
+            pen_color: 7, // White
+            image: &mut image,
+        };
+        let res = get_var_val("x", &variables, &turtle).unwrap();
+        assert_eq!(res, 1.0);
+    }
+}
