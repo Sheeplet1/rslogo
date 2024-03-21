@@ -192,6 +192,7 @@ pub fn parse_conditional_blocks(
     tokens: &[&str],
     curr_pos: &mut usize,
     vars: &mut HashMap<String, Expression>,
+    procs: &mut HashMap<String, ASTNode>,
     is_proc: bool,
 ) -> Result<Vec<ASTNode>, ParseError> {
     if tokens[*curr_pos] != "[" {
@@ -207,7 +208,7 @@ pub fn parse_conditional_blocks(
     let mut block: Vec<ASTNode> = Vec::new();
 
     while *curr_pos < tokens.len() && tokens[*curr_pos] != "]" {
-        let ast = parse_tokens(tokens.to_vec(), curr_pos, vars, is_proc)?;
+        let ast = parse_tokens(tokens.to_vec(), curr_pos, vars, procs, is_proc)?;
         block.extend(ast);
     }
 
@@ -281,6 +282,7 @@ pub fn parse_procedure(
     tokens: &[&str],
     curr_pos: &mut usize,
     vars: &mut HashMap<String, Expression>,
+    procs: &mut HashMap<String, ASTNode>,
 ) -> Result<ASTNode, ParseError> {
     if tokens[*curr_pos] != "TO" {
         return Err(ParseError {
@@ -301,9 +303,56 @@ pub fn parse_procedure(
 
     let mut block: Vec<ASTNode> = Vec::new();
     while *curr_pos < tokens.len() && tokens[*curr_pos] != "END" {
-        let ast = parse_tokens(tokens.to_vec(), curr_pos, vars, true)?;
+        let ast = parse_tokens(tokens.to_vec(), curr_pos, vars, procs, true)?;
         block.extend(ast);
     }
 
+    procs.insert(
+        name.clone(),
+        ASTNode::ProcedureDefinition {
+            name: name.clone(),
+            args: args.clone(),
+            block: block.clone(),
+        },
+    );
     Ok(ASTNode::ProcedureDefinition { name, args, block })
+}
+
+pub fn parse_procedure_call(
+    tokens: &[&str],
+    curr_pos: &mut usize,
+    vars: &mut HashMap<String, Expression>,
+    procs: &mut HashMap<String, ASTNode>,
+) -> Result<ASTNode, ParseError> {
+    // TODO:
+    let name = tokens[*curr_pos].to_string();
+    *curr_pos += 1;
+
+    // Parsing the arguments, we need to parse them as expressions and then
+    // pass them to the procedure call.
+    // To determine how many arguments we require, we can check the ProcedureDefinition
+    // stored in the procs hashmap.
+
+    let def = procs.get(&name).unwrap();
+    let mut num_args = 0;
+    if let ASTNode::ProcedureDefinition { name, args, block } = def {
+        num_args = args.len();
+    }
+
+    // TODO: Parse the arguments and pass them to the procedure call.
+    let mut args: Vec<Expression> = Vec::new();
+    while *curr_pos < tokens.len() && num_args > 0 {
+        println!("Parsing arg: {:?}", tokens[*curr_pos]);
+        // let expr = match_parse(tokens, curr_pos, vars, true)?;
+        // args.push(expr);
+        num_args -= 1;
+    }
+
+    if !procs.contains_key(&name) {
+        return Err(ParseError {
+            msg: format!("Procedure not found: {:?}", name),
+        });
+    }
+
+    Ok(ASTNode::ProcedureCall { name, args })
 }

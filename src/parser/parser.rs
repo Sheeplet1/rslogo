@@ -12,7 +12,10 @@ use crate::{errors::ParseError, parser::ast::ControlFlow};
 
 use super::{
     ast::{ASTNode, Command, Expression},
-    helpers::{match_parse, parse_conditional_blocks, parse_conditions, parse_procedure},
+    helpers::{
+        match_parse, parse_conditional_blocks, parse_conditions, parse_procedure,
+        parse_procedure_call,
+    },
 };
 
 /// Parse tokens into an Abstract Syntax Tree (AST).
@@ -35,6 +38,7 @@ pub fn parse_tokens(
     tokens: Vec<&str>,
     curr_pos: &mut usize,
     variables: &mut HashMap<String, Expression>,
+    procs: &mut HashMap<String, ASTNode>,
     is_proc: bool,
 ) -> Result<Vec<ASTNode>, ParseError> {
     let mut ast = Vec::new();
@@ -101,7 +105,7 @@ pub fn parse_tokens(
                     match_parse(&tokens, curr_pos, variables, is_proc);
 
                 // Now that expr is of type `Expression`, we can insert it into the
-                // variables, is_proc HashMap, making it easier on the execution phase.
+                // variables HashMap, making it easier on the execution phase.
                 match expr {
                     Ok(expr) => {
                         variables.insert(var_name.to_string(), expr.clone());
@@ -111,7 +115,8 @@ pub fn parse_tokens(
                 };
             }
             "ADDASSIGN" => {
-                // ADDASSIGN can only work on variables, is_proc
+                // ADDASSIGN can only work on variables, so check for other
+                // expressions and return error if found.
                 *curr_pos += 1;
                 if !tokens[*curr_pos].starts_with('"') {
                     return Err(ParseError {
@@ -137,13 +142,15 @@ pub fn parse_tokens(
             "IF" => {
                 *curr_pos += 1; // Skip the IF token
                 let condition = parse_conditions(&tokens, &mut *curr_pos, variables, is_proc)?;
-                let block = parse_conditional_blocks(&tokens, &mut *curr_pos, variables, is_proc)?;
+                let block =
+                    parse_conditional_blocks(&tokens, &mut *curr_pos, variables, procs, is_proc)?;
                 ast.push(ASTNode::ControlFlow(ControlFlow::If { condition, block }));
             }
             "WHILE" => {
                 *curr_pos += 1; // Skip the WHILE token
                 let condition = parse_conditions(&tokens, &mut *curr_pos, variables, is_proc)?;
-                let block = parse_conditional_blocks(&tokens, &mut *curr_pos, variables, is_proc)?;
+                let block =
+                    parse_conditional_blocks(&tokens, &mut *curr_pos, variables, procs, is_proc)?;
                 ast.push(ASTNode::ControlFlow(ControlFlow::While {
                     condition,
                     block,
@@ -155,8 +162,7 @@ pub fn parse_tokens(
                 return Ok(ast);
             }
             "TO" => {
-                let expr = parse_procedure(&tokens, curr_pos, variables)?;
-                println!("Procedure: {:#?}", expr);
+                let expr = parse_procedure(&tokens, curr_pos, variables, procs)?;
                 ast.push(expr);
             }
             "END" => {
@@ -164,9 +170,15 @@ pub fn parse_tokens(
                 return Ok(ast);
             }
             _ => {
-                return Err(ParseError {
-                    msg: format!("Failed to parse expression: {:?}", tokens[*curr_pos]),
-                });
+                // TODO: If we reach this point, it may be a procedure call.
+                if procs.contains_key(tokens[*curr_pos]) {
+                    let node = parse_procedure_call(&tokens, curr_pos, variables, procs)?;
+                    ast.push(node);
+                } else {
+                    return Err(ParseError {
+                        msg: format!("Failed to parse expression: {:?}", tokens[*curr_pos]),
+                    });
+                }
             }
         }
         *curr_pos += 1

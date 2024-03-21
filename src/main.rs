@@ -22,6 +22,8 @@ use std::{collections::HashMap, error::Error, fs::File, io::Read};
 use clap::Parser;
 use unsvg::Image;
 
+use crate::parser::ast::ASTNode;
+
 /// A simple program to parse four arguments using clap.
 #[derive(Parser)]
 struct Args {
@@ -63,8 +65,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
 
     let mut vars: HashMap<String, Expression> = HashMap::new();
+    let mut procs: HashMap<String, ASTNode> = HashMap::new();
     let tokens = tokenize_script(&contents);
-    let ast = parse_tokens(tokens, &mut 0, &mut vars, false)?;
+    let ast = parse_tokens(tokens, &mut 0, &mut vars, &mut procs, false)?;
     println!("ast: {:#?}", ast);
     execute(&ast, &mut turtle, &mut vars)?;
 
