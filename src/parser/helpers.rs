@@ -143,7 +143,7 @@ pub fn parse_conditions(
     let condition_idx = *curr_pos;
 
     // If condition_idx is not an condition but a boolean, we return early.
-    if matches!(tokens[condition_idx], "EQ" | "LT" | "GT" | "AND" | "OR") {
+    if !matches!(tokens[condition_idx], "EQ" | "LT" | "GT" | "AND" | "OR") {
         let res = match_parse(tokens, curr_pos, vars, is_proc)
             .map(|expr| Condition::Equals(expr, Expression::Float(1.0)));
         *curr_pos += 1;
