@@ -153,4 +153,50 @@ fn should_execute(
             comparator(lhs, rhs, |a, b| a != 0.0 || b != 0.0, turtle, variables)
         }
     }
+    .map_err(|e| ExecutionError {
+        msg: format!("Error evaluating condition: {}", e),
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use unsvg::Image;
+
+    use super::*;
+
+    #[test]
+    fn test_comparator() {
+        let mut image = Image::new(100, 100);
+        let turtle = Turtle {
+            x: (100 / 2) as f32,
+            y: (100 / 2) as f32,
+            heading: 0,
+            pen_down: false,
+            pen_color: 7, // White
+            image: &mut image,
+        };
+        let variables: HashMap<String, Expression> = HashMap::new();
+        let lhs = Expression::Float(8.0);
+        let rhs = Expression::Float(10.0);
+        let res = comparator(&lhs, &rhs, |a, b| a < b, &turtle, &variables).unwrap();
+        assert!(res, "{}", true);
+    }
+
+    #[test]
+    fn test_should_execute() {
+        let variables: HashMap<String, Expression> = HashMap::new();
+        let mut image = Image::new(100, 100);
+        let turtle = Turtle {
+            x: (100 / 2) as f32,
+            y: (100 / 2) as f32,
+            heading: 0,
+            pen_down: false,
+            pen_color: 7, // White
+            image: &mut image,
+        };
+        let condition = Condition::LessThan(Expression::Float(8.0), Expression::Float(10.0));
+
+        let res = should_execute(&condition, &turtle, &variables).unwrap();
+        assert!(res, "{}", true);
+    }
 }
