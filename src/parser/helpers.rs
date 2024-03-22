@@ -4,10 +4,10 @@
 
 use std::collections::HashMap;
 
-use crate::errors::ParseError;
-
 use super::{
     ast::{ASTNode, Condition, Expression, Math, Query},
+    errors::ParseError,
+    errors::ParseErrorKind::{self, VariableNotFound},
     parser::parse_tokens,
 };
 
@@ -40,11 +40,13 @@ pub fn match_parse(
         if vars.contains_key(token) {
             Ok(Expression::Variable(token.to_string()))
         } else {
+            // TODO: Add col & line
             Err(ParseError {
-                msg: format!(
-                    "Variable not found: {:?}, you may have forgotten to MAKE it.",
-                    tokens[*pos]
-                ),
+                kind: VariableNotFound {
+                    var: token.to_string(),
+                },
+                col: None,
+                line: None,
             })
         }
     } else if matches!(
@@ -78,13 +80,23 @@ pub fn parse_expression(tokens: &[&str], pos: usize) -> Result<f32, ParseError> 
             Ok(0.0)
         } else {
             token.parse::<f32>().map_err(|_| ParseError {
-                msg: format!("Failed to parse expression: {:?}", tokens[pos]),
+                // TODO: Col & Line
+                kind: ParseErrorKind::InvalidSyntax {
+                    details: format!("Cannot parse this expression as a float: {:?}", token),
+                },
+                col: None,
+                line: None,
             })
         }
     } else {
-        Err(ParseError {
-            msg: format!("Cannot parse an invalid expression: {:?}", tokens[pos]),
-        })
+        // TODO: Col & Line
+        return Err(ParseError {
+            kind: ParseErrorKind::InvalidSyntax {
+                details: format!("Cannot parse this expression as a float: {:?}", tokens[pos]),
+            },
+            col: None,
+            line: None,
+        });
     }
 }
 
@@ -107,10 +119,12 @@ pub fn parse_query(tokens: &[&str], pos: usize) -> Result<Query, ParseError> {
         "COLOR" => Query::Color,
         _ => {
             return Err(ParseError {
-                msg: format!(
-                    "Failed to parse this expression as a query: {:?}",
-                    tokens[pos]
-                ),
+                // TODO: Line & Col
+                kind: ParseErrorKind::InvalidSyntax {
+                    details: format!("Could not parse this token as a query: {:?}", tokens[pos]),
+                },
+                col: None,
+                line: None,
             });
         }
     };
@@ -159,8 +173,12 @@ pub fn parse_conditions(
         "OR" => Condition::Or(expr_1, expr_2),
         _ => {
             return Err(ParseError {
-                msg: format!("Invalid condition operator: {:?}", tokens[condition_idx]),
-            });
+                kind: ParseErrorKind::InvalidSyntax {
+                    details: format!("Invalid condition provided: {:?}", tokens[condition_idx]),
+                },
+                col: None,
+                line: None,
+            })
         }
     };
 
@@ -189,10 +207,14 @@ pub fn parse_conditional_blocks(
 ) -> Result<Vec<ASTNode>, ParseError> {
     if tokens[*curr_pos] != "[" {
         return Err(ParseError {
-            msg: format!(
-                "Expected start of a conditional block: {:?}",
-                tokens[*curr_pos]
-            ),
+            kind: ParseErrorKind::InvalidSyntax {
+                details: format!(
+                    "Expected the start of a conditiona block: '[', found: {:?}",
+                    tokens[*curr_pos]
+                ),
+            },
+            col: None,
+            line: None,
         });
     }
     *curr_pos += 1; // skipping '['
@@ -206,7 +228,14 @@ pub fn parse_conditional_blocks(
 
     if tokens[*curr_pos] != "]" {
         return Err(ParseError {
-            msg: format!("Failed to parse conditional block: {:?}", tokens[*curr_pos]),
+            kind: ParseErrorKind::InvalidSyntax {
+                details: format!(
+                    "Expected the end of a conditional block: ']', found: {:?}",
+                    tokens[*curr_pos]
+                ),
+            },
+            col: None,
+            line: None,
         });
     }
 
@@ -231,10 +260,9 @@ pub fn parse_maths(
 ) -> Result<Expression, ParseError> {
     // Maths will usually be in the form of: <operator> <expression> <expression>
     // operators will be +, -, *, /
-    let res = match tokens[*curr_pos] {
+    let operator = tokens[*curr_pos];
+    let res = match operator {
         "+" | "-" | "*" | "/" | "EQ" | "LT" | "GT" | "NE" | "AND" | "OR" => {
-            let operator = tokens[*curr_pos];
-
             *curr_pos += 1;
             let expr_1 = match_parse(tokens, curr_pos, vars)?;
             *curr_pos += 1;
@@ -251,17 +279,15 @@ pub fn parse_maths(
                 "NE" => Expression::Math(Box::new(Math::Ne(expr_1, expr_2))),
                 "AND" => Expression::Math(Box::new(Math::And(expr_1, expr_2))),
                 "OR" => Expression::Math(Box::new(Math::Or(expr_1, expr_2))),
-                _ => {
-                    return Err(ParseError {
-                        msg: format!("Invalid operator: {:?}", operator),
-                    })
-                }
             }
         }
-
         _ => {
             return Err(ParseError {
-                msg: format!("Invalid operator: {:?}", tokens[*curr_pos]),
+                kind: ParseErrorKind::InvalidSyntax {
+                    details: format!("Invalid operator provided: {:?}", operator),
+                },
+                col: None,
+                line: None,
             })
         }
     };

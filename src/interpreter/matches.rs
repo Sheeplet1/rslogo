@@ -4,12 +4,9 @@
 
 use std::collections::HashMap;
 
-use crate::{
-    errors::ExecutionError,
-    parser::ast::{Expression, Math, Query},
-};
+use crate::parser::ast::{Expression, Math, Query};
 
-use super::turtle::Turtle;
+use super::{errors::ExecutionError, turtle::Turtle};
 
 /// Helper function to match queries to turtle's state.
 ///
@@ -66,6 +63,7 @@ fn get_var_val(
     variables: &HashMap<String, Expression>,
     turtle: &Turtle,
 ) -> Result<f32, ExecutionError> {
+    // TODO: Hate this, refactor.
     if let Some(Expression::Float(val)) = variables.get(var) {
         Ok(*val)
     } else if let Some(Expression::Number(val)) = variables.get(var) {
@@ -77,12 +75,7 @@ fn get_var_val(
     } else if let Some(Expression::Math(expr)) = variables.get(var) {
         Ok(eval_math(expr, variables, turtle)?)
     } else {
-        Err(ExecutionError {
-            msg: format!(
-                "Variable {} does not exist. Consider constructing the variable with MAKE first.",
-                var
-            ),
-        })
+        Err(ExecutionError::var_not_found(var))
     }
 }
 
@@ -159,9 +152,7 @@ fn eval_math(
         Math::Div(lhs, rhs) => {
             let rhs_val = match_expressions(rhs, variables, turtle)?;
             if rhs_val == 0.0 {
-                return Err(ExecutionError {
-                    msg: "Division by zero".to_string(),
-                });
+                return Err(ExecutionError::div_by_zero());
             }
             Ok(eval_binary_op(lhs, rhs, variables, turtle, |a, b| a / b)?)
         }

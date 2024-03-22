@@ -15,19 +15,12 @@
 //!
 //! let mut image = Image::new(width, height);
 //!
-//! let mut turtle = Turtle {
-//!    x: (width / 2),
-//!    y: (height / 2),
-//!    heading: 0,
-//!    pen_down: false,
-//!    pen_color: 7, // White
-//!    image: &mut image,
-//! }
+//! let turtle = Turtle::new(&mut image);
 //! ```
 
 use unsvg::{Image, COLORS};
 
-use crate::errors::ExtendedUnsvgError;
+use crate::parser::errors::ExtendedUnsvgError;
 
 pub struct Turtle<'a> {
     pub x: f32,

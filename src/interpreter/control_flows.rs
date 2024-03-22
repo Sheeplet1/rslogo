@@ -4,12 +4,9 @@
 //! condition is true.
 use std::collections::HashMap;
 
-use crate::{
-    errors::ExecutionError,
-    parser::ast::{ASTNode, Condition, Expression},
-};
+use crate::parser::ast::{ASTNode, Condition, Expression};
 
-use super::{execute::execute, matches::match_expressions, turtle::Turtle};
+use super::{errors::ExecutionError, execute::execute, matches::match_expressions, turtle::Turtle};
 
 /// Compares two expressions using a given comparator.
 ///

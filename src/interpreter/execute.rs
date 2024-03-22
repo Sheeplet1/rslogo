@@ -3,13 +3,11 @@
 
 use std::collections::HashMap;
 
-use crate::{
-    errors::ExecutionError,
-    parser::ast::{ASTNode, Command, ControlFlow, Expression, Query},
-};
+use crate::parser::ast::{ASTNode, Command, ControlFlow, Expression, Query};
 
 use super::{
     control_flows::{eval_exec_if, eval_exec_while},
+    errors::ExecutionError,
     matches::match_expressions,
     turtle::Turtle,
 };
@@ -27,88 +25,44 @@ pub fn execute(
                 Command::PenUp => turtle.pen_up(),
                 Command::Forward(expr) => {
                     let dist = match_expressions(expr, vars, turtle)?;
-                    if dist.is_nan() {
-                        return Err(ExecutionError {
-                            msg: format!("Forward distance must be a float. {:?}", expr),
-                        });
-                    }
                     turtle.forward(dist);
                 }
                 Command::Back(expr) => {
                     let dist = match_expressions(expr, vars, turtle)?;
-                    if dist.is_nan() {
-                        return Err(ExecutionError {
-                            msg: format!("Back distance must be a float. {:?}", expr),
-                        });
-                    }
                     turtle.back(dist);
                 }
                 Command::Left(expr) => {
                     let dist = match_expressions(expr, vars, turtle)?;
-                    if dist.is_nan() {
-                        return Err(ExecutionError {
-                            msg: format!("Left distance must be a float. {:?}", expr),
-                        });
-                    }
                     turtle.left(dist);
                 }
                 Command::Right(expr) => {
                     let dist = match_expressions(expr, vars, turtle)?;
-                    if dist.is_nan() {
-                        return Err(ExecutionError {
-                            msg: format!("Right distance must be a float. {:?}", expr),
-                        });
-                    }
                     turtle.right(dist);
                 }
                 Command::SetPenColor(expr) => {
                     let color = match_expressions(expr, vars, turtle)?;
-                    if color.is_nan() {
-                        return Err(ExecutionError {
-                            msg: format!("Set pen color must be an usize. {:?}", expr),
-                        });
-                    }
                     turtle
                         .set_pen_color(color as usize)
-                        .map_err(|e| ExecutionError { msg: e.to_string() })?;
+                        .expect("Pen color should be in the appropriate range after parsing.");
                 }
                 Command::Turn(expr) => {
-                    let degrees = match_expressions(expr, vars, turtle)?;
-                    if degrees.is_nan() {
-                        return Err(ExecutionError {
-                            msg: format!("Turn degrees must be an i32. {:?}", expr),
-                        });
-                    }
-                    turtle.turn(degrees as i32);
+                    let degs = match_expressions(expr, vars, turtle)?;
+                    turtle.turn(degs as i32);
                 }
                 Command::SetHeading(expr) => {
-                    let degrees = match_expressions(expr, vars, turtle)?;
-                    if degrees.is_nan() {
-                        return Err(ExecutionError {
-                            msg: format!("Set heading degrees must be an i32. {:?}", expr),
-                        });
-                    }
-                    turtle.set_heading(degrees as i32);
+                    let degs = match_expressions(expr, vars, turtle)?;
+                    turtle.set_heading(degs as i32);
                 }
                 Command::SetX(expr) => {
                     let x = match_expressions(expr, vars, turtle)?;
-                    if x.is_nan() {
-                        return Err(ExecutionError {
-                            msg: format!("Set x must be a float. {:?}", expr),
-                        });
-                    }
                     turtle.set_x(x);
                 }
                 Command::SetY(expr) => {
                     let y = match_expressions(expr, vars, turtle)?;
-                    if y.is_nan() {
-                        return Err(ExecutionError {
-                            msg: format!("Set y must be a float. {:?}", expr),
-                        });
-                    }
                     turtle.set_y(y);
                 }
                 Command::Make(var, expr) => {
+                    // TODO: I hate this, need to refactor.
                     let var = var.to_string();
                     if let Expression::Query(query) = expr {
                         match query {
@@ -135,9 +89,9 @@ pub fn execute(
                         let val = match_expressions(expr, vars, turtle)?;
                         vars.insert(var.clone(), Expression::Float(val));
                     } else {
-                        return Err(ExecutionError {
-                            msg: format!("Make expression must be a float or a query. {:?}", expr),
-                        });
+                        return Err(ExecutionError::type_error(
+                            "float, number, usize, query, or mathematical expression",
+                        ));
                     }
                 }
                 Command::AddAssign(var, expr) => {
@@ -146,9 +100,7 @@ pub fn execute(
                     if let Some(Expression::Float(curr_val)) = vars.get(var) {
                         vars.insert(var.to_string(), Expression::Float(curr_val + val));
                     } else {
-                        return Err(ExecutionError {
-                            msg: format!("Variable {} does not exist. Consider constructing the variable with MAKE first.", var),
-                        });
+                        return Err(ExecutionError::var_not_found(var));
                     }
                 }
             },

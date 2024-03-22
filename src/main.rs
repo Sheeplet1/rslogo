@@ -11,7 +11,6 @@
 //! This will run the program with the file `examples/flower.lg` and output
 //! the image to `examples/flower.svg` with a height and width of 1000.
 
-pub mod errors;
 mod interpreter;
 mod parser;
 

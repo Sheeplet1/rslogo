@@ -8,12 +8,13 @@
 
 use std::collections::HashMap;
 
-use crate::{errors::ParseError, parser::ast::ControlFlow};
+use crate::parser::ast::ControlFlow;
 
 use super::{
     ast::ASTNode,
     ast::Command,
     ast::Expression,
+    errors::{ParseError, ParseErrorKind},
     helpers::{match_parse, parse_conditional_blocks, parse_conditions},
 };
 
@@ -116,14 +117,22 @@ pub fn parse_tokens(
                 *curr_pos += 1;
                 if !tokens[*curr_pos].starts_with('"') {
                     return Err(ParseError {
-                        msg: format!("Invalid expression for ADDASSIGN: {:?}\nExpressions for ADDASSIGN should start with \"", tokens[*curr_pos]),
+                        kind: ParseErrorKind::InvalidSyntax {
+                            details: "ADDASSIGN can only work on variables".to_string(),
+                        },
+                        col: None,
+                        line: None,
                     });
                 }
 
                 let var_name = tokens[*curr_pos].trim_start_matches('"');
                 if !variables.contains_key(var_name) {
                     return Err(ParseError {
-                        msg: format!("Variable not found for ADDASSIGN: {:?}", var_name),
+                        kind: ParseErrorKind::VariableNotFound {
+                            var: var_name.to_string(),
+                        },
+                        col: None,
+                        line: None,
                     });
                 }
 
@@ -157,7 +166,11 @@ pub fn parse_tokens(
             }
             _ => {
                 return Err(ParseError {
-                    msg: format!("Failed to parse expression: {:?}", tokens[*curr_pos]),
+                    kind: ParseErrorKind::InvalidSyntax {
+                        details: format!("Unexpected token: {}", tokens[*curr_pos]),
+                    },
+                    col: None,
+                    line: None,
                 });
             }
         }
