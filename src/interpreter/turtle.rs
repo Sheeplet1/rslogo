@@ -41,6 +41,18 @@ pub struct Turtle<'a> {
 }
 
 impl Turtle<'_> {
+    pub fn new(image: &mut Image) -> Turtle {
+        let (width, height) = image.get_dimensions();
+        Turtle {
+            x: (width / 2) as f32,
+            y: (height / 2) as f32,
+            heading: 0,
+            pen_down: false,
+            pen_color: 7,
+            image,
+        }
+    }
+
     pub fn pen_down(&mut self) {
         self.pen_down = true;
     }

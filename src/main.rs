@@ -53,14 +53,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
 
-    let mut turtle = Turtle {
-        x: (width / 2) as f32,
-        y: (height / 2) as f32,
-        heading: 0,
-        pen_down: false,
-        pen_color: 7, // White
-        image: &mut image,
-    };
+    let mut turtle = Turtle::new(&mut image);
 
     let mut vars: HashMap<String, Expression> = HashMap::new();
     let tokens = tokenize_script(&contents);
