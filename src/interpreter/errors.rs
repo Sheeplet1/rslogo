@@ -2,7 +2,6 @@
 pub enum ExecutionErrorKind {
     DivisionByZero,
     VariableNotFound { var_name: String },
-    InvalidOperation { operation: String },
     TypeError { expected: String },
 }
 
@@ -29,15 +28,6 @@ impl ExecutionError {
         }
     }
 
-    pub fn invalid_operation(operation: &str) -> Self {
-        ExecutionError {
-            kind: ExecutionErrorKind::InvalidOperation {
-                operation: operation.into(),
-            },
-            msg: Some(format!("Invalid operation '{}'.", operation)),
-        }
-    }
-
     pub fn type_error(expected: &str) -> Self {
         ExecutionError {
             kind: ExecutionErrorKind::TypeError {
@@ -56,9 +46,6 @@ impl std::fmt::Display for ExecutionError {
             ExecutionErrorKind::DivisionByZero => write!(f, "Division by zero error."),
             ExecutionErrorKind::VariableNotFound { var_name } => {
                 write!(f, "Variable not found: {}", var_name)
-            }
-            ExecutionErrorKind::InvalidOperation { operation } => {
-                write!(f, "Invalid operation '{}'.", operation)
             }
             ExecutionErrorKind::TypeError { expected } => {
                 write!(f, "Expected type '{}'.", expected)

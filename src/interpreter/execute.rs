@@ -41,9 +41,7 @@ pub fn execute(
                 }
                 Command::SetPenColor(expr) => {
                     let color = match_expressions(expr, vars, turtle)?;
-                    turtle
-                        .set_pen_color(color as usize)
-                        .expect("Pen color should be in the appropriate range after parsing.");
+                    turtle.set_pen_color(color as usize)
                 }
                 Command::Turn(expr) => {
                     let degs = match_expressions(expr, vars, turtle)?;

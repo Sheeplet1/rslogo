@@ -1,3 +1,5 @@
+#![warn(missing_docs)]
+
 //! # rslogo
 //!
 //! A simple Logo interpreter which produces the subsequent SVG images.

@@ -2,6 +2,7 @@
 //!
 //! Responsible for evaluating conditions and executing the block if the
 //! condition is true.
+
 use std::collections::HashMap;
 
 use crate::parser::ast::{ASTNode, Condition, Expression};
@@ -16,25 +17,26 @@ use super::{errors::ExecutionError, execute::execute, matches::match_expressions
 /// use std::collections::HashMap;
 /// use turtle::Turtle;
 /// use parser::ast::{Condition, Expression};
-/// use interpreter::control_flows::comparator;
 /// use interpreter::errors::ExecutionError;
 ///
-/// let mut variables: HashMap<String, Expression> = HashMap::new();
+/// let mut vars: HashMap<String, Expression> = HashMap::new();
 /// let turtle = Turtle::new();
+///
 /// let lhs = Expression::Float(8.0);
 /// let rhs = Expression::Float(10.0);
-/// let result = comparator(&lhs, &rhs, |a, b| a < b, &turtle, &variables);
-/// assert_eq!(result, Ok(true));
+///
+/// let res = comparator(&lhs, &rhs, |a, b| a < b, &turtle, &vars);
+/// assert_eq!(res, Ok(true));
 /// ```
 fn comparator(
     lhs: &Expression,
     rhs: &Expression,
     comparator: fn(f32, f32) -> bool,
     turtle: &Turtle,
-    variables: &HashMap<String, Expression>,
+    vars: &HashMap<String, Expression>,
 ) -> Result<bool, ExecutionError> {
-    let lhs_val = match_expressions(lhs, variables, turtle)?;
-    let rhs_val = match_expressions(rhs, variables, turtle)?;
+    let lhs_val = match_expressions(lhs, vars, turtle)?;
+    let rhs_val = match_expressions(rhs, vars, turtle)?;
     Ok(comparator(lhs_val, rhs_val))
 }
 
@@ -48,27 +50,28 @@ fn comparator(
 /// use interpreter::control_flows::eval_exec_if;
 /// use interpreter::errors::ExecutionError;
 ///
-/// let mut variables: HashMap<String, Expression> = HashMap::new();
+/// let mut vars: HashMap<String, Expression> = HashMap::new();
 /// let mut turtle = Turtle::new();
+///
 /// let condition = Condition::LessThan(
 ///   Box::new(Expression::Float(8.0)),
 ///   Box::new(Expression::Float(10.0)),
 /// );
 ///
 /// let block = vec![ASTNode::Command(Command::Forward(Expression::Float(100.0)))];
-/// let result = eval_exec_if(&condition, &block, &mut turtle, &mut variables);
+/// let result = eval_exec_if(&condition, &block, &mut turtle, &mut vars);
 /// assert_eq!(result, Ok(()));
 /// ```
 pub fn eval_exec_if(
     condition: &Condition,
     block: &Vec<ASTNode>,
     turtle: &mut Turtle,
-    variables: &mut HashMap<String, Expression>,
+    vars: &mut HashMap<String, Expression>,
 ) -> Result<(), ExecutionError> {
-    let exec = should_execute(condition, turtle, variables)?;
+    let exec = should_execute(condition, turtle, vars)?;
 
     if exec {
-        execute(block, turtle, variables)?;
+        execute(block, turtle, vars)?;
     }
 
     Ok(())
@@ -82,10 +85,9 @@ pub fn eval_exec_if(
 /// use std::collections::HashMap;
 /// use turtle::Turtle;
 /// use parser::ast::{ASTNode, Condition, Expression};
-/// use interpreter::control_flows::eval_exec_while;
 /// use interpreter::errors::ExecutionError;
 ///
-/// let mut variables: HashMap<String, Expression> = HashMap::new();
+/// let mut vars: HashMap<String, Expression> = HashMap::new();
 /// let mut turtle = Turtle::new();
 /// let condition = Condition::LessThan(
 ///    Box::new(Expression::Float(8.0)),
@@ -93,21 +95,21 @@ pub fn eval_exec_if(
 /// );
 ///
 /// let block = vec![ASTNode::Command(Command::Forward(Expression::Float(100.0)))];
-/// let result = eval_exec_while(&condition, &block, &mut turtle, &mut variables);
-/// assert_eq!(result, Ok(()));
+/// let res = eval_exec_while(&condition, &block, &mut turtle, &mut vars);
+/// assert_eq!(res, Ok(()));
 /// ```
 pub fn eval_exec_while(
     condition: &Condition,
     block: &Vec<ASTNode>,
     turtle: &mut Turtle,
-    variables: &mut HashMap<String, Expression>,
+    vars: &mut HashMap<String, Expression>,
 ) -> Result<(), ExecutionError> {
-    let mut exec = should_execute(condition, turtle, variables)?;
+    let mut exec = should_execute(condition, turtle, vars)?;
 
     while exec {
-        execute(block, turtle, variables)?;
+        execute(block, turtle, vars)?;
 
-        exec = should_execute(condition, turtle, variables)?;
+        exec = should_execute(condition, turtle, vars)?;
     }
 
     Ok(())
@@ -124,30 +126,26 @@ pub fn eval_exec_while(
 /// use interpreter::control_flows::should_execute;
 /// use interpreter::errors::ExecutionError;
 ///
-/// let mut variables: HashMap<String, Expression> = HashMap::new();
+/// let mut vars: HashMap<String, Expression> = HashMap::new();
 /// let turtle = Turtle::new();
 /// let condition = Condition::LessThan(
 ///   Box::new(Expression::Float(8.0)),
 ///   Box::new(Expression::Float(10.0)),
 /// );
 ///
-/// let result = should_execute(&condition, &turtle, &variables);
-/// assert_eq!(result, Ok(true));
+/// let res = should_execute(&condition, &turtle, &vars);
+/// assert_eq!(res, Ok(true));
 /// ```
 fn should_execute(
     condition: &Condition,
     turtle: &Turtle,
-    variables: &HashMap<String, Expression>,
+    vars: &HashMap<String, Expression>,
 ) -> Result<bool, ExecutionError> {
     match condition {
-        Condition::Equals(lhs, rhs) => comparator(lhs, rhs, |a, b| a == b, turtle, variables),
-        Condition::LessThan(lhs, rhs) => comparator(lhs, rhs, |a, b| a < b, turtle, variables),
-        Condition::GreaterThan(lhs, rhs) => comparator(lhs, rhs, |a, b| a > b, turtle, variables),
-        Condition::And(lhs, rhs) => {
-            comparator(lhs, rhs, |a, b| a != 0.0 && b != 0.0, turtle, variables)
-        }
-        Condition::Or(lhs, rhs) => {
-            comparator(lhs, rhs, |a, b| a != 0.0 || b != 0.0, turtle, variables)
-        }
+        Condition::Equals(lhs, rhs) => comparator(lhs, rhs, |a, b| a == b, turtle, vars),
+        Condition::LessThan(lhs, rhs) => comparator(lhs, rhs, |a, b| a < b, turtle, vars),
+        Condition::GreaterThan(lhs, rhs) => comparator(lhs, rhs, |a, b| a > b, turtle, vars),
+        Condition::And(lhs, rhs) => comparator(lhs, rhs, |a, b| a != 0.0 && b != 0.0, turtle, vars),
+        Condition::Or(lhs, rhs) => comparator(lhs, rhs, |a, b| a != 0.0 || b != 0.0, turtle, vars),
     }
 }

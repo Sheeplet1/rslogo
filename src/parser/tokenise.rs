@@ -12,9 +12,10 @@
 /// ```
 ///
 /// Tokenising this script would result in the following vector:
+///
 /// ```rust
 /// vec!["PENDOWN", "SETPENCOLOR" "\"1", "FORWARD" "\"100"]
-/// ````
+/// ```
 pub fn tokenize_script(contents: &str) -> Vec<&str> {
     let tokens: Vec<&str> = contents
         .lines()

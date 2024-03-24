@@ -1,6 +1,6 @@
 //! Handles parsing the Logo script into an Abstract Syntax Tree (AST).
 //!
-//! The Logo script is tokenised into a vector of tokens, which are then parsed
+//! The Logo script is tokenised into a vector of tokens, which is then parsed
 //! into ASTNode and Expression types. The ASTNode type is used to represent the
 //! Abstract Syntax Tree (AST) of the Logo script, and the Expression type is
 //! used to represent the different types of expressions that can be parsed from
@@ -87,6 +87,17 @@ pub fn parse_tokens(
             "SETPENCOLOR" => {
                 *curr_pos += 1;
                 let expr = match_parse(&tokens, curr_pos, variables)?;
+
+                if let Expression::Float(color) = expr {
+                    if !(0..=15).contains(&(color as usize)) {
+                        return Err(ParseError {
+                            kind: ParseErrorKind::InvalidSyntax {
+                                msg: "Colour index must be between 0 and 15 inclusive.".to_string(),
+                            },
+                        });
+                    }
+                }
+
                 ast.push(ASTNode::Command(Command::SetPenColor(expr)));
             }
             "TURN" => {
@@ -102,8 +113,6 @@ pub fn parse_tokens(
                 let expr: Result<Expression, ParseError> =
                     match_parse(&tokens, curr_pos, variables);
 
-                // Now that expr is of type `Expression`, we can insert it into the
-                // variables HashMap, making it easier on the execution phase.
                 match expr {
                     Ok(expr) => {
                         variables.insert(var_name.to_string(), expr.clone());
@@ -118,10 +127,8 @@ pub fn parse_tokens(
                 if !tokens[*curr_pos].starts_with('"') {
                     return Err(ParseError {
                         kind: ParseErrorKind::InvalidSyntax {
-                            details: "ADDASSIGN can only work on variables".to_string(),
+                            msg: "ADDASSIGN can only work on variables".to_string(),
                         },
-                        col: None,
-                        line: None,
                     });
                 }
 
@@ -131,8 +138,6 @@ pub fn parse_tokens(
                         kind: ParseErrorKind::VariableNotFound {
                             var: var_name.to_string(),
                         },
-                        col: None,
-                        line: None,
                     });
                 }
 
@@ -164,13 +169,17 @@ pub fn parse_tokens(
                 // and return the ast directly.
                 return Ok(ast);
             }
+            "TO" => {
+                unimplemented!();
+            }
+            "END" => {
+                unimplemented!();
+            }
             _ => {
                 return Err(ParseError {
-                    kind: ParseErrorKind::InvalidSyntax {
-                        details: format!("Unexpected token: {}", tokens[*curr_pos]),
+                    kind: ParseErrorKind::UnexpectedToken {
+                        token: tokens[*curr_pos].to_string(),
                     },
-                    col: None,
-                    line: None,
                 });
             }
         }

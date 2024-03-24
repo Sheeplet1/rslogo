@@ -20,8 +20,6 @@
 
 use unsvg::{Image, COLORS};
 
-use crate::parser::errors::ExtendedUnsvgError;
-
 pub struct Turtle<'a> {
     pub x: f32,
     pub y: f32,
@@ -54,15 +52,8 @@ impl Turtle<'_> {
         self.pen_down = false;
     }
 
-    pub fn set_pen_color(&mut self, color: usize) -> Result<(), ExtendedUnsvgError> {
-        if !(0..=15).contains(&color) {
-            return Err(ExtendedUnsvgError {
-                msg: "Colour index must be between 0 and 15 inclusive.".to_string(),
-            });
-        }
-
+    pub fn set_pen_color(&mut self, color: usize) {
         self.pen_color = color;
-        Ok(())
     }
 
     /// Degrees are not normalised.
