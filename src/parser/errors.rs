@@ -29,3 +29,32 @@ impl std::fmt::Display for ParseError {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_error_display() {
+        let err = ParseError {
+            kind: ParseErrorKind::UnexpectedToken {
+                token: "foo".to_string(),
+            },
+        };
+        assert_eq!(err.to_string(), "Unexpected token: 'foo'");
+
+        let err = ParseError {
+            kind: ParseErrorKind::InvalidSyntax {
+                msg: "foo".to_string(),
+            },
+        };
+        assert_eq!(err.to_string(), "Invalid syntax: 'foo'.");
+
+        let err = ParseError {
+            kind: ParseErrorKind::VariableNotFound {
+                var: "foo".to_string(),
+            },
+        };
+        assert_eq!(err.to_string(), "Variable not found: 'foo'.");
+    }
+}
