@@ -206,6 +206,16 @@ pub fn parse_conditional_blocks(
         block.extend(ast);
     }
 
+    // If we reach the end of the tokens and the block hasn't been closed yet,
+    // we return an error.
+    if *curr_pos >= tokens.len() || tokens[*curr_pos] != "]" {
+        return Err(ParseError {
+            kind: ParseErrorKind::InvalidSyntax {
+                msg: "Expected the end of a conditional block: ']'".to_string(),
+            },
+        });
+    }
+
     Ok(block)
 }
 
@@ -429,6 +439,18 @@ mod tests {
         let mut vars: HashMap<String, Expression> = HashMap::new();
 
         let tokens = vec!["PENDOWN", "FORWARD", "\"100", "]"];
+        let mut curr_pos = 0;
+
+        let block = parse_conditional_blocks(&tokens, &mut curr_pos, &mut vars);
+
+        assert!(block.is_err());
+    }
+
+    #[test]
+    fn test_parse_cond_block_inval_end() {
+        let mut vars: HashMap<String, Expression> = HashMap::new();
+
+        let tokens = vec!["[", "PENDOWN", "FORWARD", "\"100"];
         let mut curr_pos = 0;
 
         let block = parse_conditional_blocks(&tokens, &mut curr_pos, &mut vars);
