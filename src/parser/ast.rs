@@ -1,12 +1,12 @@
 //! Representation of the Logo script as an Abstract Syntax Tree (AST).
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ASTNode {
     Command(Command),
     ControlFlow(ControlFlow),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Expression {
     Float(f32),
     Number(i32),
@@ -16,7 +16,7 @@ pub enum Expression {
     Math(Box<Math>),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Command {
     Forward(Expression),
     Back(Expression),
@@ -33,7 +33,7 @@ pub enum Command {
     AddAssign(String, Expression),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Query {
     XCor,
     YCor,
@@ -41,7 +41,7 @@ pub enum Query {
     Color,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Math {
     Add(Expression, Expression),
     Sub(Expression, Expression),
@@ -55,7 +55,7 @@ pub enum Math {
     Or(Expression, Expression),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ControlFlow {
     If {
         condition: Condition,
@@ -67,7 +67,7 @@ pub enum ControlFlow {
     },
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Condition {
     Equals(Expression, Expression),
     LessThan(Expression, Expression),

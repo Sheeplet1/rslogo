@@ -20,9 +20,9 @@ use super::{
 /// use std::collections::HashMap;
 ///
 /// let tokens = vec!["\"100"];
-/// let expr = match_parse(&tokens, &mut 0, &mut HashMap::new());
+/// let expr = match_parse(&tokens, &mut 0, &mut HashMap::new())?;
 ///
-/// assert_eq!(expr, Ok(Expression::Float(100.0)));
+/// assert_eq!(expr, Expression::Float(100.0));
 /// ```
 pub fn match_parse(
     tokens: &[&str],
@@ -62,9 +62,9 @@ pub fn match_parse(
 ///
 /// ```rust
 /// let tokens = vec!["\"100"];
-/// let expr = parse_expression(&tokens, 0);
+/// let expr = parse_expression(&tokens, 0)?;
 ///
-/// assert_eq!(expr, Ok(100.0));
+/// assert_eq!(expr, 100.0);
 /// ```
 pub fn parse_expression(tokens: &[&str], pos: usize) -> Result<f32, ParseError> {
     if tokens[pos].starts_with('"') {
@@ -161,13 +161,7 @@ pub fn parse_conditions(
         "GT" => Condition::GreaterThan(expr_1, expr_2),
         "AND" => Condition::And(expr_1, expr_2),
         "OR" => Condition::Or(expr_1, expr_2),
-        _ => {
-            return Err(ParseError {
-                kind: ParseErrorKind::InvalidSyntax {
-                    msg: format!("Invalid condition provided: {:?}", tokens[condition_idx]),
-                },
-            })
-        }
+        _ => unreachable!(),
     };
 
     Ok(condition)
@@ -210,19 +204,6 @@ pub fn parse_conditional_blocks(
     while *curr_pos < tokens.len() && tokens[*curr_pos] != "]" {
         let ast = parse_tokens(tokens.to_vec(), curr_pos, vars)?;
         block.extend(ast);
-    }
-
-    // If we reach the end of the tokens and the block hasn't been closed yet,
-    // we return an error.
-    if tokens[*curr_pos] != "]" {
-        return Err(ParseError {
-            kind: ParseErrorKind::InvalidSyntax {
-                msg: format!(
-                    "Expected the end of a conditional block: ']', found: {:?}",
-                    tokens[*curr_pos]
-                ),
-            },
-        });
     }
 
     Ok(block)
@@ -278,4 +259,392 @@ pub fn parse_maths(
     };
 
     Ok(res)
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::parser::ast::Command;
+
+    use super::*;
+
+    #[test]
+    fn test_parse_float_expr() {
+        let tokens = vec!["\"100"];
+        let expr = parse_expression(&tokens, 0).unwrap();
+
+        assert_eq!(expr, 100.0);
+    }
+
+    #[test]
+    fn test_parse_true_expr() {
+        let tokens = vec!["\"TRUE"];
+        let expr = parse_expression(&tokens, 0).unwrap();
+
+        assert_eq!(expr, 1.0);
+    }
+
+    #[test]
+    fn test_parse_false_expr() {
+        let tokens = vec!["\"FALSE"];
+        let expr = parse_expression(&tokens, 0).unwrap();
+
+        assert_eq!(expr, 0.0);
+    }
+
+    #[test]
+    fn test_invalid_parse_expr() {
+        let tokens = vec!["TOKEN"];
+        let expr = parse_expression(&tokens, 0);
+
+        assert!(expr.is_err());
+    }
+
+    #[test]
+    fn test_invalid_parse_expr_2() {
+        let tokens = vec!["\"TOKEN"];
+        let expr = parse_expression(&tokens, 0);
+
+        assert!(expr.is_err());
+    }
+
+    #[test]
+    fn test_parse_query() {
+        let tokens = vec!["XCOR"];
+        let query = parse_query(&tokens, 0).unwrap();
+
+        assert_eq!(query, Query::XCor);
+    }
+
+    #[test]
+    fn test_parse_conditions() {
+        let mut vars: HashMap<String, Expression> = HashMap::new();
+        let tokens = vec!["EQ", "\"100", "\"100"];
+
+        let condition = parse_conditions(&tokens, &mut 0, &mut vars).unwrap();
+
+        assert_eq!(
+            condition,
+            Condition::Equals(Expression::Float(100.0), Expression::Float(100.0))
+        );
+    }
+
+    #[test]
+    fn test_parse_condition_bool() {
+        let mut vars: HashMap<String, Expression> = HashMap::new();
+        vars.insert("x".to_string(), Expression::Float(1.0));
+
+        let tokens = vec![":x"];
+        let condition = parse_conditions(&tokens, &mut 0, &mut vars).unwrap();
+
+        assert_eq!(
+            condition,
+            Condition::Equals(
+                Expression::Variable("x".to_string()),
+                Expression::Float(1.0)
+            )
+        );
+    }
+
+    #[test]
+    fn test_parse_conditions_lt() {
+        let mut vars: HashMap<String, Expression> = HashMap::new();
+        let tokens = vec!["LT", "\"80", "\"100"];
+
+        let condition = parse_conditions(&tokens, &mut 0, &mut vars).unwrap();
+
+        assert_eq!(
+            condition,
+            Condition::LessThan(Expression::Float(80.0), Expression::Float(100.0))
+        );
+    }
+
+    #[test]
+    fn test_parse_conditions_gt() {
+        let mut vars: HashMap<String, Expression> = HashMap::new();
+        let tokens = vec!["GT", "\"100", "\"80"];
+
+        let condition = parse_conditions(&tokens, &mut 0, &mut vars).unwrap();
+
+        assert_eq!(
+            condition,
+            Condition::GreaterThan(Expression::Float(100.0), Expression::Float(80.0))
+        );
+    }
+
+    #[test]
+    fn test_parse_conditions_and() {
+        let mut vars: HashMap<String, Expression> = HashMap::new();
+        let tokens = vec!["AND", "\"100", "\"100"];
+
+        let condition = parse_conditions(&tokens, &mut 0, &mut vars).unwrap();
+
+        assert_eq!(
+            condition,
+            Condition::And(Expression::Float(100.0), Expression::Float(100.0))
+        );
+    }
+
+    #[test]
+    fn test_parse_conditions_or() {
+        let mut vars: HashMap<String, Expression> = HashMap::new();
+        let tokens = vec!["OR", "\"100", "\"100"];
+
+        let condition = parse_conditions(&tokens, &mut 0, &mut vars).unwrap();
+
+        assert_eq!(
+            condition,
+            Condition::Or(Expression::Float(100.0), Expression::Float(100.0))
+        );
+    }
+
+    #[test]
+    fn test_parse_invalid_cond() {
+        let mut vars: HashMap<String, Expression> = HashMap::new();
+        let tokens = vec!["INVALID", "\"100", "\"100"];
+
+        let condition = parse_conditions(&tokens, &mut 0, &mut vars);
+
+        assert!(condition.is_err());
+    }
+
+    #[test]
+    fn test_parse_conditional_blocks() {
+        let mut vars: HashMap<String, Expression> = HashMap::new();
+
+        let tokens = vec!["[", "PENDOWN", "FORWARD", "\"100", "]"];
+        let mut curr_pos = 0;
+
+        let block = parse_conditional_blocks(&tokens, &mut curr_pos, &mut vars).unwrap();
+        assert_eq!(
+            block,
+            vec![
+                ASTNode::Command(Command::PenDown),
+                ASTNode::Command(Command::Forward(Expression::Float(100.0)))
+            ]
+        );
+    }
+
+    #[test]
+    fn test_parse_cond_block_inval_start() {
+        let mut vars: HashMap<String, Expression> = HashMap::new();
+
+        let tokens = vec!["PENDOWN", "FORWARD", "\"100", "]"];
+        let mut curr_pos = 0;
+
+        let block = parse_conditional_blocks(&tokens, &mut curr_pos, &mut vars);
+
+        assert!(block.is_err());
+    }
+
+    #[test]
+    fn test_parse_maths_add() {
+        let mut vars: HashMap<String, Expression> = HashMap::new();
+        let tokens = vec!["+", "\"100", "\"100"];
+        let mut curr_pos = 0;
+        let expr = parse_maths(&tokens, &mut curr_pos, &mut vars).unwrap();
+        assert_eq!(
+            expr,
+            Expression::Math(Box::new(Math::Add(
+                Expression::Float(100.0),
+                Expression::Float(100.0)
+            )))
+        );
+    }
+
+    #[test]
+    fn test_parse_maths_sub() {
+        let mut vars: HashMap<String, Expression> = HashMap::new();
+        let tokens = vec!["-", "\"100", "\"100"];
+        let mut curr_pos = 0;
+        let expr = parse_maths(&tokens, &mut curr_pos, &mut vars).unwrap();
+        assert_eq!(
+            expr,
+            Expression::Math(Box::new(Math::Sub(
+                Expression::Float(100.0),
+                Expression::Float(100.0)
+            )))
+        );
+    }
+
+    #[test]
+    fn test_parse_maths_mul() {
+        let mut vars: HashMap<String, Expression> = HashMap::new();
+        let tokens = vec!["*", "\"100", "\"100"];
+        let mut curr_pos = 0;
+        let expr = parse_maths(&tokens, &mut curr_pos, &mut vars).unwrap();
+        assert_eq!(
+            expr,
+            Expression::Math(Box::new(Math::Mul(
+                Expression::Float(100.0),
+                Expression::Float(100.0)
+            )))
+        );
+    }
+
+    #[test]
+    fn test_parse_maths_div() {
+        let mut vars: HashMap<String, Expression> = HashMap::new();
+        let tokens = vec!["/", "\"100", "\"100"];
+        let mut curr_pos = 0;
+        let expr = parse_maths(&tokens, &mut curr_pos, &mut vars).unwrap();
+        assert_eq!(
+            expr,
+            Expression::Math(Box::new(Math::Div(
+                Expression::Float(100.0),
+                Expression::Float(100.0)
+            )))
+        );
+    }
+
+    #[test]
+    fn test_parse_maths_eq() {
+        let mut vars: HashMap<String, Expression> = HashMap::new();
+        let tokens = vec!["EQ", "\"100", "\"100"];
+        let mut curr_pos = 0;
+        let expr = parse_maths(&tokens, &mut curr_pos, &mut vars).unwrap();
+        assert_eq!(
+            expr,
+            Expression::Math(Box::new(Math::Eq(
+                Expression::Float(100.0),
+                Expression::Float(100.0)
+            )))
+        );
+    }
+
+    #[test]
+    fn test_parse_maths_lt() {
+        let mut vars: HashMap<String, Expression> = HashMap::new();
+        let tokens = vec!["LT", "\"100", "\"100"];
+        let mut curr_pos = 0;
+        let expr = parse_maths(&tokens, &mut curr_pos, &mut vars).unwrap();
+        assert_eq!(
+            expr,
+            Expression::Math(Box::new(Math::Lt(
+                Expression::Float(100.0),
+                Expression::Float(100.0)
+            )))
+        );
+    }
+
+    #[test]
+    fn test_parse_maths_gt() {
+        let mut vars: HashMap<String, Expression> = HashMap::new();
+        let tokens = vec!["GT", "\"100", "\"100"];
+        let mut curr_pos = 0;
+        let expr = parse_maths(&tokens, &mut curr_pos, &mut vars).unwrap();
+        assert_eq!(
+            expr,
+            Expression::Math(Box::new(Math::Gt(
+                Expression::Float(100.0),
+                Expression::Float(100.0)
+            )))
+        );
+    }
+
+    #[test]
+    fn test_parse_maths_ne() {
+        let mut vars: HashMap<String, Expression> = HashMap::new();
+        let tokens = vec!["NE", "\"100", "\"100"];
+        let mut curr_pos = 0;
+        let expr = parse_maths(&tokens, &mut curr_pos, &mut vars).unwrap();
+        assert_eq!(
+            expr,
+            Expression::Math(Box::new(Math::Ne(
+                Expression::Float(100.0),
+                Expression::Float(100.0)
+            )))
+        );
+    }
+
+    #[test]
+    fn test_parse_maths_and() {
+        let mut vars: HashMap<String, Expression> = HashMap::new();
+        let tokens = vec!["AND", "\"100", "\"100"];
+        let mut curr_pos = 0;
+        let expr = parse_maths(&tokens, &mut curr_pos, &mut vars).unwrap();
+        assert_eq!(
+            expr,
+            Expression::Math(Box::new(Math::And(
+                Expression::Float(100.0),
+                Expression::Float(100.0)
+            )))
+        );
+    }
+
+    #[test]
+    fn test_parse_maths_or() {
+        let mut vars: HashMap<String, Expression> = HashMap::new();
+        let tokens = vec!["OR", "\"100", "\"100"];
+        let mut curr_pos = 0;
+        let expr = parse_maths(&tokens, &mut curr_pos, &mut vars).unwrap();
+        assert_eq!(
+            expr,
+            Expression::Math(Box::new(Math::Or(
+                Expression::Float(100.0),
+                Expression::Float(100.0)
+            )))
+        );
+    }
+
+    #[test]
+    fn test_parse_maths_invalid_operator() {
+        let mut vars: HashMap<String, Expression> = HashMap::new();
+        let tokens = vec!["INVALID", "\"100", "\"100"];
+        let mut curr_pos = 0;
+        let expr = parse_maths(&tokens, &mut curr_pos, &mut vars);
+
+        assert!(expr.is_err());
+    }
+
+    #[test]
+    fn test_match_parse() {
+        let mut vars: HashMap<String, Expression> = HashMap::new();
+        let tokens = vec!["\"100"];
+        let expr = match_parse(&tokens, &mut 0, &mut vars).unwrap();
+
+        assert_eq!(expr, Expression::Float(100.0));
+    }
+
+    #[test]
+    fn test_match_parse_variable() {
+        let mut vars: HashMap<String, Expression> = HashMap::new();
+        vars.insert("x".to_string(), Expression::Float(100.0));
+        let tokens = vec![":x"];
+        let expr = match_parse(&tokens, &mut 0, &mut vars).unwrap();
+
+        assert_eq!(expr, Expression::Variable("x".to_string()));
+    }
+
+    #[test]
+    fn test_match_parse_invalid_var() {
+        let mut vars: HashMap<String, Expression> = HashMap::new();
+        let tokens = vec![":x"];
+        let expr = match_parse(&tokens, &mut 0, &mut vars);
+
+        assert!(expr.is_err());
+    }
+
+    #[test]
+    fn test_match_parse_maths() {
+        let mut vars: HashMap<String, Expression> = HashMap::new();
+        let tokens = vec!["+", "\"100", "\"100"];
+        let mut curr_pos = 0;
+        let expr = match_parse(&tokens, &mut curr_pos, &mut vars).unwrap();
+        assert_eq!(
+            expr,
+            Expression::Math(Box::new(Math::Add(
+                Expression::Float(100.0),
+                Expression::Float(100.0)
+            )))
+        );
+    }
+
+    #[test]
+    fn test_match_parse_query() {
+        let mut vars: HashMap<String, Expression> = HashMap::new();
+        let tokens = vec!["XCOR"];
+        let query = match_parse(&tokens, &mut 0, &mut vars).unwrap();
+
+        assert_eq!(query, Expression::Query(Query::XCor));
+    }
 }
