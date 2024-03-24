@@ -81,11 +81,11 @@ pub fn parse_expression(tokens: &[&str], pos: usize) -> Result<f32, ParseError> 
             })
         }
     } else {
-        return Err(ParseError {
+        Err(ParseError {
             kind: ParseErrorKind::InvalidSyntax {
                 msg: format!("Cannot parse this expression as a float: {:?}", tokens[pos]),
             },
-        });
+        })
     }
 }
 
