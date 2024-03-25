@@ -6,7 +6,10 @@ use std::collections::HashMap;
 
 use crate::parser::ast::{Expression, Math, Query};
 
-use super::{errors::ExecutionError, turtle::Turtle};
+use super::{
+    errors::{ExecutionError, ExecutionErrorKind},
+    turtle::Turtle,
+};
 
 /// Helper function to match queries to turtle's state.
 ///
@@ -75,7 +78,11 @@ fn get_var_val(
     } else if let Some(Expression::Math(expr)) = variables.get(var) {
         Ok(eval_math(expr, variables, turtle)?)
     } else {
-        Err(ExecutionError::var_not_found(var))
+        Err(ExecutionError {
+            kind: ExecutionErrorKind::VariableNotFound {
+                var: var.to_string(),
+            },
+        })
     }
 }
 
@@ -152,7 +159,9 @@ fn eval_math(
         Math::Div(lhs, rhs) => {
             let rhs_val = match_expressions(rhs, variables, turtle)?;
             if rhs_val == 0.0 {
-                return Err(ExecutionError::div_by_zero());
+                return Err(ExecutionError {
+                    kind: ExecutionErrorKind::DivisionByZero,
+                });
             }
             Ok(eval_binary_op(lhs, rhs, variables, turtle, |a, b| a / b)?)
         }

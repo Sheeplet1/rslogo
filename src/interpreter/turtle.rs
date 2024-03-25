@@ -118,3 +118,155 @@ impl Turtle<'_> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_new_turtle() {
+        let width: u32 = 100;
+        let height: u32 = 100;
+        let mut image = Image::new(width, height);
+
+        let turtle = Turtle::new(&mut image);
+
+        assert_eq!(turtle.x, width as f32 / 2.0);
+        assert_eq!(turtle.y, height as f32 / 2.0);
+        assert_eq!(turtle.heading, 0);
+        assert!(!turtle.pen_down);
+        assert_eq!(turtle.pen_color, 7);
+    }
+
+    #[test]
+    fn test_pen_down() {
+        let mut image = Image::new(100, 100);
+        let mut turtle = Turtle::new(&mut image);
+
+        assert!(!turtle.pen_down);
+        turtle.pen_down();
+        assert!(turtle.pen_down);
+    }
+
+    #[test]
+    fn test_pen_up() {
+        let mut image = Image::new(100, 100);
+        let mut turtle = Turtle::new(&mut image);
+
+        assert!(!turtle.pen_down);
+        turtle.pen_down();
+        assert!(turtle.pen_down);
+        turtle.pen_up();
+        assert!(!turtle.pen_down);
+    }
+
+    #[test]
+    fn test_set_pen_color() {
+        let mut image = Image::new(100, 100);
+        let mut turtle = Turtle::new(&mut image);
+
+        assert_eq!(turtle.pen_color, 7);
+        turtle.set_pen_color(0);
+        assert_eq!(turtle.pen_color, 0);
+    }
+
+    #[test]
+    fn test_turn() {
+        let mut image = Image::new(100, 100);
+        let mut turtle = Turtle::new(&mut image);
+
+        assert_eq!(turtle.heading, 0);
+        turtle.turn(90);
+        assert_eq!(turtle.heading, 90);
+    }
+
+    #[test]
+    fn test_set_heading() {
+        let mut image = Image::new(100, 100);
+        let mut turtle = Turtle::new(&mut image);
+
+        assert_eq!(turtle.heading, 0);
+        turtle.set_heading(90);
+        assert_eq!(turtle.heading, 90);
+    }
+
+    #[test]
+    fn test_set_x() {
+        let mut image = Image::new(100, 100);
+        let mut turtle = Turtle::new(&mut image);
+
+        assert_eq!(turtle.x, 50.0);
+        turtle.set_x(10.0);
+        assert_eq!(turtle.x, 10.0);
+    }
+
+    #[test]
+    fn test_set_y() {
+        let mut image = Image::new(100, 100);
+        let mut turtle = Turtle::new(&mut image);
+
+        assert_eq!(turtle.y, 50.0);
+        turtle.set_y(10.0);
+        assert_eq!(turtle.y, 10.0);
+    }
+
+    #[test]
+    fn test_forward() {
+        let mut image = Image::new(100, 100);
+        let mut turtle = Turtle::new(&mut image);
+
+        assert_eq!(turtle.x, 50.0);
+        assert_eq!(turtle.y, 50.0);
+        turtle.forward(10.0);
+        assert_eq!(turtle.x, 50.0);
+        assert_eq!(turtle.y, 40.0);
+    }
+
+    #[test]
+    fn test_back() {
+        let mut image = Image::new(100, 100);
+        let mut turtle = Turtle::new(&mut image);
+
+        assert_eq!(turtle.x, 50.0);
+        assert_eq!(turtle.y, 50.0);
+        turtle.back(10.0);
+        assert_eq!(turtle.x, 50.0);
+        assert_eq!(turtle.y, 60.0);
+    }
+
+    #[test]
+    fn test_left() {
+        let mut image = Image::new(100, 100);
+        let mut turtle = Turtle::new(&mut image);
+
+        assert_eq!(turtle.x, 50.0);
+        assert_eq!(turtle.y, 50.0);
+        turtle.left(10.0);
+        assert_eq!(turtle.x, 40.0);
+        assert_eq!(turtle.y, 50.0);
+    }
+
+    #[test]
+    fn test_right() {
+        let mut image = Image::new(100, 100);
+        let mut turtle = Turtle::new(&mut image);
+
+        assert_eq!(turtle.x, 50.0);
+        assert_eq!(turtle.y, 50.0);
+        turtle.right(10.0);
+        assert_eq!(turtle.x, 60.0);
+        assert_eq!(turtle.y, 50.0);
+    }
+
+    #[test]
+    fn test_move_turtle() {
+        let mut image = Image::new(100, 100);
+        let mut turtle = Turtle::new(&mut image);
+
+        assert_eq!(turtle.x, 50.0);
+        assert_eq!(turtle.y, 50.0);
+        turtle.move_turtle(0, 10.0);
+        assert_eq!(turtle.x, 50.0);
+        assert_eq!(turtle.y, 40.0);
+    }
+}

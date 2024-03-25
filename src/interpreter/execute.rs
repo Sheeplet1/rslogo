@@ -7,7 +7,7 @@ use crate::parser::ast::{ASTNode, Command, ControlFlow, Expression, Query};
 
 use super::{
     control_flows::{eval_exec_if, eval_exec_while},
-    errors::ExecutionError,
+    errors::{ExecutionError, ExecutionErrorKind},
     matches::match_expressions,
     turtle::Turtle,
 };
@@ -87,9 +87,12 @@ pub fn execute(
                         let val = match_expressions(expr, vars, turtle)?;
                         vars.insert(var.clone(), Expression::Float(val));
                     } else {
-                        return Err(ExecutionError::type_error(
-                            "float, number, usize, query, or mathematical expression",
-                        ));
+                        return Err(ExecutionError {
+                            kind: ExecutionErrorKind::TypeError {
+                                expected: "float, number, usize, query, or mathematical expression"
+                                    .to_string(),
+                            },
+                        });
                     }
                 }
                 Command::AddAssign(var, expr) => {
@@ -98,7 +101,11 @@ pub fn execute(
                     if let Some(Expression::Float(curr_val)) = vars.get(var) {
                         vars.insert(var.to_string(), Expression::Float(curr_val + val));
                     } else {
-                        return Err(ExecutionError::var_not_found(var));
+                        return Err(ExecutionError {
+                            kind: ExecutionErrorKind::VariableNotFound {
+                                var: var.to_string(),
+                            },
+                        });
                     }
                 }
             },

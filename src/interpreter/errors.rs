@@ -1,61 +1,56 @@
 #[derive(Debug)]
 pub enum ExecutionErrorKind {
     DivisionByZero,
-    VariableNotFound { var_name: String },
+    VariableNotFound { var: String },
     TypeError { expected: String },
 }
 
 #[derive(Debug)]
 pub struct ExecutionError {
     pub kind: ExecutionErrorKind,
-    pub msg: Option<String>,
-}
-
-impl ExecutionError {
-    pub fn div_by_zero() -> Self {
-        ExecutionError {
-            kind: ExecutionErrorKind::DivisionByZero,
-            msg: Some("Attempted division by zero.".to_string()),
-        }
-    }
-
-    pub fn var_not_found(var_name: &str) -> Self {
-        ExecutionError {
-            kind: ExecutionErrorKind::VariableNotFound {
-                var_name: var_name.into(),
-            },
-            msg: Some(format!("Variable '{}' not found.", var_name)),
-        }
-    }
-
-    pub fn type_error(expected: &str) -> Self {
-        ExecutionError {
-            kind: ExecutionErrorKind::TypeError {
-                expected: expected.into(),
-            },
-            msg: Some(format!("Expected type '{}'", expected)),
-        }
-    }
 }
 
 impl std::error::Error for ExecutionError {}
 
 impl std::fmt::Display for ExecutionError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let _ = match &self.kind {
-            ExecutionErrorKind::DivisionByZero => write!(f, "Division by zero error."),
-            ExecutionErrorKind::VariableNotFound { var_name } => {
-                write!(f, "Variable not found: {}", var_name)
+        match &self.kind {
+            ExecutionErrorKind::DivisionByZero => {
+                write!(f, "Division by zero")
+            }
+            ExecutionErrorKind::VariableNotFound { var } => {
+                write!(f, "Variable not found: '{}'", var)
             }
             ExecutionErrorKind::TypeError { expected } => {
-                write!(f, "Expected type '{}'.", expected)
+                write!(f, "Type error: expected '{}'", expected)
             }
-        };
-
-        if let Some(msg) = &self.msg {
-            write!(f, " {}", msg)
-        } else {
-            Ok(())
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_display() {
+        let error = ExecutionError {
+            kind: ExecutionErrorKind::DivisionByZero,
+        };
+        assert_eq!(error.to_string(), "Division by zero");
+
+        let error = ExecutionError {
+            kind: ExecutionErrorKind::VariableNotFound {
+                var: "x".to_string(),
+            },
+        };
+        assert_eq!(error.to_string(), "Variable not found: 'x'");
+
+        let error = ExecutionError {
+            kind: ExecutionErrorKind::TypeError {
+                expected: "number".to_string(),
+            },
+        };
+        assert_eq!(error.to_string(), "Type error: expected 'number'");
     }
 }
