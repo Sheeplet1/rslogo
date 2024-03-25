@@ -211,3 +211,296 @@ fn eval_math(
         }),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use unsvg::Image;
+
+    use super::*;
+    use crate::parser::ast::Query;
+
+    #[test]
+    fn test_match_queries() {
+        let mut image = Image::new(100, 100);
+        let turtle = Turtle::new(&mut image);
+
+        let res = match_queries(&Query::XCor, &turtle);
+        assert_eq!(res, 50.0);
+
+        let res = match_queries(&Query::YCor, &turtle);
+        assert_eq!(res, 50.0);
+
+        let res = match_queries(&Query::Heading, &turtle);
+        assert_eq!(res, 0.0);
+
+        let res = match_queries(&Query::Color, &turtle);
+        assert_eq!(res, 7.0);
+    }
+
+    #[test]
+    fn test_match_expressions() {
+        let mut variables = HashMap::new();
+        variables.insert("x".to_string(), Expression::Float(1.0));
+        let mut image = Image::new(100, 100);
+        let turtle = Turtle::new(&mut image);
+
+        let res = match_expressions(&Expression::Float(1.0), &variables, &turtle).unwrap();
+        assert_eq!(res, 1.0);
+
+        let res = match_expressions(&Expression::Number(1), &variables, &turtle).unwrap();
+        assert_eq!(res, 1.0);
+
+        let res = match_expressions(&Expression::Usize(1), &variables, &turtle).unwrap();
+        assert_eq!(res, 1.0);
+
+        let res = match_expressions(&Expression::Query(Query::XCor), &variables, &turtle).unwrap();
+        assert_eq!(res, 50.0);
+
+        let res =
+            match_expressions(&Expression::Variable("x".to_string()), &variables, &turtle).unwrap();
+        assert_eq!(res, 1.0);
+
+        let res = match_expressions(
+            &Expression::Math(Box::new(Math::Add(
+                Expression::Float(1.0),
+                Expression::Float(2.0),
+            ))),
+            &variables,
+            &turtle,
+        )
+        .unwrap();
+        assert_eq!(res, 3.0);
+    }
+
+    #[test]
+    fn test_get_var_val() {
+        let mut variables = HashMap::new();
+
+        variables.insert("float".to_string(), Expression::Float(1.0));
+        variables.insert("number".to_string(), Expression::Number(1));
+        variables.insert("usize".to_string(), Expression::Usize(1));
+        variables.insert("query".to_string(), Expression::Query(Query::XCor));
+        variables.insert(
+            "math".to_string(),
+            Expression::Math(Box::new(Math::Add(
+                Expression::Float(1.0),
+                Expression::Float(2.0),
+            ))),
+        );
+
+        let mut image = Image::new(100, 100);
+        let turtle = Turtle::new(&mut image);
+
+        let res = get_var_val("float", &variables, &turtle).unwrap();
+        assert_eq!(res, 1.0);
+
+        let res = get_var_val("number", &variables, &turtle).unwrap();
+        assert_eq!(res, 1.0);
+
+        let res = get_var_val("usize", &variables, &turtle).unwrap();
+        assert_eq!(res, 1.0);
+
+        let res = get_var_val("query", &variables, &turtle).unwrap();
+        assert_eq!(res, 50.0);
+
+        let res = get_var_val("math", &variables, &turtle).unwrap();
+        assert_eq!(res, 3.0);
+    }
+
+    #[test]
+    fn test_get_var_val_error() {
+        let variables = HashMap::new();
+        let mut image = Image::new(100, 100);
+        let turtle = Turtle::new(&mut image);
+
+        let res = get_var_val("x", &variables, &turtle);
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn test_eval_binary_op() {
+        let variables = HashMap::new();
+        let mut image = Image::new(100, 100);
+        let turtle = Turtle::new(&mut image);
+
+        let lhs = Expression::Float(1.0);
+        let rhs = Expression::Float(2.0);
+
+        let res = eval_binary_op(&lhs, &rhs, &variables, &turtle, |a, b| a + b).unwrap();
+        assert_eq!(res, 3.0);
+    }
+
+    #[test]
+    fn test_eval_logical_op() {
+        let variables = HashMap::new();
+        let mut image = Image::new(100, 100);
+        let turtle = Turtle::new(&mut image);
+
+        let lhs = Expression::Float(1.0);
+        let rhs = Expression::Float(2.0);
+
+        let res = eval_logical_op(&lhs, &rhs, &variables, &turtle, |a, b| {
+            if a < b {
+                1.0
+            } else {
+                0.0
+            }
+        })
+        .unwrap();
+        assert_eq!(res, 1.0);
+
+        let res = eval_logical_op(&lhs, &rhs, &variables, &turtle, |a, b| {
+            if a > b {
+                1.0
+            } else {
+                0.0
+            }
+        })
+        .unwrap();
+        assert_eq!(res, 0.0);
+    }
+
+    #[test]
+    fn test_eval_math_add() {
+        let variables = HashMap::new();
+        let mut image = Image::new(100, 100);
+        let turtle = Turtle::new(&mut image);
+
+        let expr = Math::Add(Expression::Float(1.0), Expression::Float(2.0));
+
+        let res = eval_math(&expr, &variables, &turtle).unwrap();
+        assert_eq!(res, 3.0);
+    }
+
+    #[test]
+    fn test_eval_math_sub() {
+        let variables = HashMap::new();
+        let mut image = Image::new(100, 100);
+        let turtle = Turtle::new(&mut image);
+
+        let expr = Math::Sub(Expression::Float(1.0), Expression::Float(2.0));
+
+        let res = eval_math(&expr, &variables, &turtle).unwrap();
+        assert_eq!(res, -1.0);
+    }
+
+    #[test]
+    fn test_eval_math_mul() {
+        let variables = HashMap::new();
+        let mut image = Image::new(100, 100);
+        let turtle = Turtle::new(&mut image);
+
+        let expr = Math::Mul(Expression::Float(1.0), Expression::Float(2.0));
+
+        let res = eval_math(&expr, &variables, &turtle).unwrap();
+        assert_eq!(res, 2.0);
+    }
+
+    #[test]
+    fn test_eval_math_div() {
+        let variables = HashMap::new();
+        let mut image = Image::new(100, 100);
+        let turtle = Turtle::new(&mut image);
+
+        let expr = Math::Div(Expression::Float(1.0), Expression::Float(2.0));
+
+        let res = eval_math(&expr, &variables, &turtle).unwrap();
+        assert_eq!(res, 0.5);
+    }
+
+    #[test]
+    fn test_eval_math_div_by_zero() {
+        let variables = HashMap::new();
+        let mut image = Image::new(100, 100);
+        let turtle = Turtle::new(&mut image);
+
+        let expr = Math::Div(Expression::Float(1.0), Expression::Float(0.0));
+
+        let res = eval_math(&expr, &variables, &turtle);
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn test_eval_math_eq() {
+        let variables = HashMap::new();
+        let mut image = Image::new(100, 100);
+        let turtle = Turtle::new(&mut image);
+
+        let expr = Math::Eq(Expression::Float(1.0), Expression::Float(1.0));
+
+        let res = eval_math(&expr, &variables, &turtle).unwrap();
+        assert_eq!(res, 1.0);
+    }
+
+    #[test]
+    fn test_eval_math_lt() {
+        let variables = HashMap::new();
+        let mut image = Image::new(100, 100);
+        let turtle = Turtle::new(&mut image);
+
+        let expr = Math::Lt(Expression::Float(1.0), Expression::Float(2.0));
+
+        let res = eval_math(&expr, &variables, &turtle).unwrap();
+        assert_eq!(res, 1.0);
+    }
+
+    #[test]
+    fn test_eval_math_gt() {
+        let variables = HashMap::new();
+        let mut image = Image::new(100, 100);
+        let turtle = Turtle::new(&mut image);
+
+        let expr = Math::Gt(Expression::Float(1.0), Expression::Float(2.0));
+
+        let res = eval_math(&expr, &variables, &turtle).unwrap();
+        assert_eq!(res, 0.0);
+    }
+
+    #[test]
+    fn test_eval_math_ne() {
+        let variables = HashMap::new();
+        let mut image = Image::new(100, 100);
+        let turtle = Turtle::new(&mut image);
+
+        let expr = Math::Ne(Expression::Float(1.0), Expression::Float(2.0));
+
+        let res = eval_math(&expr, &variables, &turtle).unwrap();
+        assert_eq!(res, 1.0);
+    }
+
+    #[test]
+    fn test_eval_math_and() {
+        let variables = HashMap::new();
+        let mut image = Image::new(100, 100);
+        let turtle = Turtle::new(&mut image);
+
+        let expr = Math::And(Expression::Float(1.0), Expression::Float(2.0));
+
+        let res = eval_math(&expr, &variables, &turtle).unwrap();
+        assert_eq!(res, 1.0);
+    }
+
+    #[test]
+    fn test_eval_math_or() {
+        let variables = HashMap::new();
+        let mut image = Image::new(100, 100);
+        let turtle = Turtle::new(&mut image);
+
+        let expr = Math::Or(Expression::Float(1.0), Expression::Float(0.0));
+
+        let res = eval_math(&expr, &variables, &turtle).unwrap();
+        assert_eq!(res, 1.0);
+    }
+
+    #[test]
+    fn test_eval_math_or_false() {
+        let variables = HashMap::new();
+        let mut image = Image::new(100, 100);
+        let turtle = Turtle::new(&mut image);
+
+        let expr = Math::Or(Expression::Float(0.0), Expression::Float(0.0));
+
+        let res = eval_math(&expr, &variables, &turtle).unwrap();
+        assert_eq!(res, 0.0);
+    }
+}
