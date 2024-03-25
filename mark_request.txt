@@ -18,16 +18,35 @@ If you have completed a "design excellence" task, please write what
 the task was below (note, it MUST be on the list in the assignment or
 approved by COMP6991 staff).
 
->
+> >=80% Test Coverage
 
 Please write a paragraph or two (max. 250 words) describing how your design was
 influenced by this challenge, with specific reference to sections of your code.
 If you completed the "Pull Request" design excellence, please just leave a link
 to your PR.
 
+> To get >= 80% test coverage, I had to separate parsing and execution logic.
+> This separation is evident in how the parsing module generates the AST 
+> independently of the execution module, which interprets the AST to draw 
+> on the canvas. This decoupling allowed for isolated unit testing of the 
+> parsing logic, focusing on syntax correctness, error handling and overall
+> correctness without needing to consider the state of the canvas or the turtle 
+> state. 
 >
+> For example, `parse_tokens` and `match_parse` were designed to return 
+> structured and predictable outputs which are suspectible to unit tests that
+> verify correct AST generation. In the interpreter/execution module, functions 
+> such as `execute` and `eval_math` were tested against expected outcomes,
+> verifying that commands were interpreted correctly and that the turtle state
+> was updated as expected.
 >
+> By structuring the code in this way, I was able to write focused tests for 
+> each logical unit.
 >
+> The challenge of achieving high test coverage encouraged the practice of 
+> writing testable code from the beginning, influencing naming decisions, 
+> modularisation of code, and the separation of concerns. I believe it made my 
+> code more readable and maintainable.
 
 ## Design Limitations
 
@@ -35,11 +54,50 @@ If you made any design decisions which you now regret making; but don't to go ba
 let us know here. You can make up your design marks by acknowledging up to 5 things you would do
 differently now.
 
-> - TODO
+### Defaulting to f32 for all numbers.
+
+> I chose to default to f32 for all numbers in the program, which made the
+> implementation of the math operations easier. However, this decision led to
+> some inconsistencies in the code, such as the need to convert f32 to i32 in
+> some cases. I would have preferred to use a more consistent approach to
+> handling numbers, such as using a custom number type that can be converted to
+> f32 or i32 as needed.
+> 
+> It also feels like I did not take full advantage of the type system in Rust
+> to enforce constraints on numbers, such as ensuring that numbers are always
+> positive or non-negative. I would have preferred to leverage Rust's strong
+> type system to enforce these constraints and make the code more robust.
+
+### Lack of booleans
+
+> I chose to represent booleans as f32s (0.0 for false, 1.0 for true) to simplify
+> the implementation of the if and while statements. However, this decision can 
+> lead to some confusion when working with booleans, such as the meaning of 1.0 or
+> 0.0, did the user mean a boolean or a float? 
+> 
+> I would have preferred to use a more explicit representation of booleans to avoid 
+> any confusion and to make the code more readable.
+
+### Limited Error Handling
+
+> My errors had types, but I did not provide any additional information about the
+> whereabouts of the error. This made it difficult to debug the program at times 
+> as the error messages were not very informative. I would have preferred to include
+> more detailed error messages to help the user understand what went wrong, specifically
+> where the error occurred (col, line) and what the error was (syntax, runtime, etc,
+> provide suggestions on what to change).
+
+### Excessive use of .clone()
+
+> I used .clone() in many places to avoid borrowing issues, but this led to some
+> performance overhead. I would have preferred to use references more effectively
+> to avoid unnecessary cloning and improve performance.
+>
+> I used .clone() in many places to finish the assignment on time, but I would have
+> preferred to refactor the code to avoid unnecessary cloning and improve performance.
 
 ## Other Comments
 
 If you want to let us know something else about your program, put it here!
 (Feel free to leave this blank)
 
-> TODO

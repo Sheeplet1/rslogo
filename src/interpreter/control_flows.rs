@@ -18,15 +18,18 @@ use super::{errors::ExecutionError, execute::execute, matches::match_expressions
 /// use turtle::Turtle;
 /// use parser::ast::{Condition, Expression};
 /// use interpreter::errors::ExecutionError;
+/// use unsvg::Image;
+///
 ///
 /// let mut vars: HashMap<String, Expression> = HashMap::new();
-/// let turtle = Turtle::new();
+/// let mut image = Image::new(100, 100);
+/// let turtle = Turtle::new(&mut image);
 ///
 /// let lhs = Expression::Float(8.0);
 /// let rhs = Expression::Float(10.0);
 ///
-/// let res = comparator(&lhs, &rhs, |a, b| a < b, &turtle, &vars);
-/// assert_eq!(res, Ok(true));
+/// let res = comparator(&lhs, &rhs, |a, b| a < b, &turtle, &vars).unwrap();
+/// assert!(res);
 /// ```
 fn comparator(
     lhs: &Expression,
@@ -49,18 +52,20 @@ fn comparator(
 /// use parser::ast::{ASTNode, Condition, Expression};
 /// use interpreter::control_flows::eval_exec_if;
 /// use interpreter::errors::ExecutionError;
+/// use unsvg::Image;
 ///
 /// let mut vars: HashMap<String, Expression> = HashMap::new();
-/// let mut turtle = Turtle::new();
+/// let mut image = Image::new(100, 100);
+/// let mut turtle = Turtle::new(&mut image);
 ///
 /// let condition = Condition::LessThan(
-///   Box::new(Expression::Float(8.0)),
-///   Box::new(Expression::Float(10.0)),
+///   Expression::Float(8.0),
+///   Expression::Float(10.0),
 /// );
 ///
 /// let block = vec![ASTNode::Command(Command::Forward(Expression::Float(100.0)))];
-/// let result = eval_exec_if(&condition, &block, &mut turtle, &mut vars);
-/// assert_eq!(result, Ok(()));
+/// let res = eval_exec_if(&condition, &block, &mut turtle, &mut vars).unwrap();
+/// assert!(res.is_ok());
 /// ```
 pub fn eval_exec_if(
     condition: &Condition,
@@ -88,15 +93,16 @@ pub fn eval_exec_if(
 /// use interpreter::errors::ExecutionError;
 ///
 /// let mut vars: HashMap<String, Expression> = HashMap::new();
-/// let mut turtle = Turtle::new();
+/// let mut image = Image::new(100, 100);
+/// let mut turtle = Turtle::new(&mut image);
 /// let condition = Condition::LessThan(
-///    Box::new(Expression::Float(8.0)),
-///    Box::new(Expression::Float(10.0)),
+///     Expression::Float(8.0),
+///     Expression::Float(10.0),
 /// );
 ///
 /// let block = vec![ASTNode::Command(Command::Forward(Expression::Float(100.0)))];
-/// let res = eval_exec_while(&condition, &block, &mut turtle, &mut vars);
-/// assert_eq!(res, Ok(()));
+/// let res = eval_exec_while(&condition, &block, &mut turtle, &mut vars).unwrap();
+/// assert!(res.is_ok());
 /// ```
 pub fn eval_exec_while(
     condition: &Condition,
@@ -127,14 +133,15 @@ pub fn eval_exec_while(
 /// use interpreter::errors::ExecutionError;
 ///
 /// let mut vars: HashMap<String, Expression> = HashMap::new();
-/// let turtle = Turtle::new();
+/// let mut image = Image::new(100, 100);
+/// let mut turtle = Turtle::new(&mut image);
 /// let condition = Condition::LessThan(
-///   Box::new(Expression::Float(8.0)),
-///   Box::new(Expression::Float(10.0)),
+///     Expression::Float(8.0),
+///     Expression::Float(10.0),
 /// );
 ///
-/// let res = should_execute(&condition, &turtle, &vars);
-/// assert_eq!(res, Ok(true));
+/// let res = should_execute(&condition, &turtle, &vars).unwrap();
+/// assert!(res);
 /// ```
 fn should_execute(
     condition: &Condition,

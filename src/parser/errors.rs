@@ -1,13 +1,13 @@
 //! Error types for the parser.
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ParseErrorKind {
     UnexpectedToken { token: String },
     InvalidSyntax { msg: String },
     VariableNotFound { var: String },
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct ParseError {
     pub kind: ParseErrorKind,
 }

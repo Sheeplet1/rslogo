@@ -13,7 +13,15 @@ use super::{
 
 /// Helper function to match queries to turtle's state.
 ///
-/// Primarily used in the `execute` function to reduce duplicated code.
+/// # Example
+///
+/// ```rust
+/// let mut image = Image::new(100, 100);
+/// let turtle = Turtle::new(&mut image);
+///
+/// let res = match_queries(&Query::XCor, &turtle);
+/// assert_eq!(res, 50.0);
+/// ```
 fn match_queries(query: &Query, turtle: &Turtle) -> f32 {
     match query {
         Query::XCor => turtle.x,
@@ -31,8 +39,9 @@ fn match_queries(query: &Query, turtle: &Turtle) -> f32 {
 ///
 /// ```rust
 /// let expr = Expression::Float(1.0);
-/// let res = match_expressions(&expr, &HashMap::new(), &Turtle::new());
-/// assert_eq!(res, Ok(1.0));
+///
+/// let res = match_expressions(&expr, &HashMap::new(), &Turtle::new()).unwrap();
+/// assert_eq!(res, 1.0);
 /// ```
 pub fn match_expressions(
     expr: &Expression,
@@ -57,9 +66,12 @@ pub fn match_expressions(
 /// ```rust
 /// let mut variables = HashMap::new();
 /// variables.insert("x".to_string(), Expression::Float(1.0));
-/// let turtle = Turtle::new();
-/// let res = get_var_val("x", &variables, &turtle);
-/// assert_eq!(res, Ok(1.0));
+///
+/// let image = Image::new(100, 100);
+/// let turtle = Turtle::new(&mut image);
+///
+/// let res = get_var_val("x", &variables, &turtle).unwrap();
+/// assert_eq!(res, 1.0);
 /// ```
 fn get_var_val(
     var: &str,
@@ -94,8 +106,8 @@ fn get_var_val(
 /// let lhs = Expression::Float(1.0);
 /// let rhs = Expression::Float(2.0);
 ///
-/// let res = eval_binary_op(&lhs, &rhs, &HashMap::new(), &Turtle::new(), |a, b| a + b);
-/// assert_eq!(res, Ok(3.0));
+/// let res = eval_binary_op(&lhs, &rhs, &HashMap::new(), &Turtle::new(), |a, b| a + b).unwrap();
+/// assert_eq!(res, 3.0);
 /// ```
 fn eval_binary_op(
     lhs: &Expression,
@@ -142,10 +154,10 @@ fn eval_logical_op(
 /// # Example
 ///
 /// ```rust
-/// let expr = Math::Add(Box::new(Expression::Float(1.0)), Box::new(Expression::Float(2.0)));
+/// let expr = Math::Add(Expression::Float(1.0), Expression::Float(2.0));
 ///
-/// let res = eval_math(&expr, &HashMap::new(), &Turtle::new());
-/// assert_eq!(res, Ok(3.0));
+/// let res = eval_math(&expr, &HashMap::new(), &Turtle::new()).unwrap();
+/// assert_eq!(res, 3.0);
 /// ```
 fn eval_math(
     expr: &Math,

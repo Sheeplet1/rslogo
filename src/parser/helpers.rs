@@ -19,8 +19,9 @@ use super::{
 /// ```rust
 /// use std::collections::HashMap;
 ///
+/// let mut vars: HashMap<String, Expression> = HashMap::new();
 /// let tokens = vec!["\"100"];
-/// let expr = match_parse(&tokens, &mut 0, &mut HashMap::new())?;
+/// let expr = match_parse(&tokens, &mut 0, &mut vars).unwrap();
 ///
 /// assert_eq!(expr, Expression::Float(100.0));
 /// ```
@@ -62,9 +63,9 @@ pub fn match_parse(
 ///
 /// ```rust
 /// let tokens = vec!["\"100"];
-/// let expr = parse_expression(&tokens, 0)?;
+/// let expr = parse_expression(&tokens, 0).unwrap();
 ///
-/// assert_eq!(expr, 100.0);
+/// assert_eq!(expr, Expression::Float(100.0));
 /// ```
 pub fn parse_expression(tokens: &[&str], pos: usize) -> Result<f32, ParseError> {
     if tokens[pos].starts_with('"') {
@@ -97,9 +98,9 @@ pub fn parse_expression(tokens: &[&str], pos: usize) -> Result<f32, ParseError> 
 ///
 /// ```rust
 /// let tokens = vec!["XCOR"];
-/// let query = parse_query(&tokens, 0);
+/// let query = parse_query(&tokens, 0).unwrap();
 ///
-/// assert_eq!(query, Ok(Query::XCor));
+/// assert_eq!(query, Query::XCor);
 /// ```
 pub fn parse_query(tokens: &[&str], pos: usize) -> Result<Query, ParseError> {
     let query = match tokens[pos] {
@@ -124,12 +125,12 @@ pub fn parse_query(tokens: &[&str], pos: usize) -> Result<Query, ParseError> {
 ///
 /// ```rust
 /// use std::collections::HashMap;
+///
 /// let mut vars: HashMap<String, Expression> = HashMap::new();
 /// let tokens = vec!["EQ", "\"100", "\"100"];
 ///
-/// let condition = parse_conditions(&tokens, &mut 0, &vars);
-///
-/// assert_eq!(condition, Ok(Condition::Equals(Expression::Float(100.0), Expression::Float(100.0))));
+/// let condition = parse_conditions(&tokens, &mut 0, &vars).unwrap();
+/// assert_eq!(condition, Condition::Equals(Expression::Float(100.0), Expression::Float(100.0)));
 /// ```
 pub fn parse_conditions(
     tokens: &[&str],
@@ -173,14 +174,14 @@ pub fn parse_conditions(
 /// # Example
 /// ```rust
 /// use std::collections::HashMap;
-/// let mut vars: HashMap<String, Expression> = HashMap::new();
 ///
+/// let mut vars: HashMap<String, Expression> = HashMap::new();
 /// let tokens = vec!["[", "PENDOWN", "FORWARD", "\"100", "]"];
 /// let mut curr_pos = 0;
 ///
-/// let block = parse_conditional_blocks(&tokens, &mut curr_pos, &mut vars);
-/// assert_eq!(block, Ok(vec![ASTNode::Command(Command::PenDown),
-///        ASTNode::Command(Command::Forward(Expression::Float(100.0)))]));
+/// let block = parse_conditional_blocks(&tokens, &mut curr_pos, &mut vars).unwrap();
+/// assert_eq!(block, vec![ASTNode::Command(Command::PenDown),
+///        ASTNode::Command(Command::Forward(Expression::Float(100.0)))]);
 /// ```
 pub fn parse_conditional_blocks(
     tokens: &[&str],
@@ -224,11 +225,13 @@ pub fn parse_conditional_blocks(
 /// # Example
 /// ```rust
 /// use std::collections::HashMap;
+///
 /// let mut vars: HashMap<String, Expression> = HashMap::new();
 /// let tokens = vec!["+", "\"100", "\"100"];
 /// let mut curr_pos = 0;
-/// let expr = parse_maths(&tokens, &mut curr_pos, &mut vars);
-/// assert_eq!(expr, Ok(Expression::Math(Box::new(Math::Add(Expression::Float(100.0), Expression::Float(100.0)))));
+///
+/// let expr = parse_maths(&tokens, &mut curr_pos, &mut vars).unwrap();
+/// assert_eq!(expr, Expression::Math(Box::new(Math::Add(Expression::Float(100.0), Expression::Float(100.0))));
 /// ```
 pub fn parse_maths(
     tokens: &[&str],

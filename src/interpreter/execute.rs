@@ -13,6 +13,24 @@ use super::{
 };
 
 /// Executes the parsed AST and draws on the image using the turtle.
+///
+/// # Examples
+///
+/// ```rust
+/// use std::collections::HashMap;
+/// use unsvg::Image;
+/// use super::*;
+///
+/// let mut image = Image::new(100, 100);
+/// let mut turtle = Turtle::new(&mut image);
+/// let mut vars = HashMap::new();
+///
+/// let ast = vec![ASTNode::Command(Command::PenDown)];
+/// let res = execute(&ast, &mut turtle, &mut vars).unwrap();
+///
+/// assert!(turte.pen_down);
+/// assert!(res.is_ok());
+/// ```
 pub fn execute(
     ast: &Vec<ASTNode>,
     turtle: &mut Turtle,
