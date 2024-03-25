@@ -122,3 +122,326 @@ pub fn execute(
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+
+    use unsvg::Image;
+
+    use crate::parser::ast::{Command, Condition, Expression, Math, Query};
+
+    use super::*;
+
+    #[test]
+    fn test_execute_pen_down() {
+        let mut image = Image::new(100, 100);
+        let mut turtle = Turtle::new(&mut image);
+        let mut vars = HashMap::new();
+
+        let ast = vec![ASTNode::Command(Command::PenDown)];
+
+        execute(&ast, &mut turtle, &mut vars).unwrap();
+
+        assert!(turtle.pen_down);
+    }
+
+    #[test]
+    fn test_execute_pen_up() {
+        let mut image = Image::new(100, 100);
+        let mut turtle = Turtle::new(&mut image);
+        let mut vars = HashMap::new();
+
+        let ast = vec![
+            ASTNode::Command(Command::PenDown),
+            ASTNode::Command(Command::PenUp),
+        ];
+
+        execute(&ast, &mut turtle, &mut vars).unwrap();
+
+        assert!(!turtle.pen_down);
+    }
+
+    #[test]
+    fn test_execute_forward() {
+        let mut image = Image::new(100, 100);
+        let mut turtle = Turtle::new(&mut image);
+        let mut vars = HashMap::new();
+
+        let ast = vec![ASTNode::Command(Command::Forward(Expression::Float(30.0)))];
+
+        execute(&ast, &mut turtle, &mut vars).unwrap();
+
+        assert_eq!(turtle.y, 20.0);
+    }
+
+    #[test]
+    fn test_execute_back() {
+        let mut image = Image::new(100, 100);
+        let mut turtle = Turtle::new(&mut image);
+        let mut vars = HashMap::new();
+
+        let ast = vec![ASTNode::Command(Command::Back(Expression::Float(30.0)))];
+
+        execute(&ast, &mut turtle, &mut vars).unwrap();
+
+        assert_eq!(turtle.y, 80.0);
+    }
+
+    #[test]
+    fn test_execute_left() {
+        let mut image = Image::new(100, 100);
+        let mut turtle = Turtle::new(&mut image);
+        let mut vars = HashMap::new();
+
+        let ast = vec![ASTNode::Command(Command::Left(Expression::Float(30.0)))];
+
+        execute(&ast, &mut turtle, &mut vars).unwrap();
+
+        assert_eq!(turtle.x, 20.0);
+    }
+
+    #[test]
+    fn test_execute_right() {
+        let mut image = Image::new(100, 100);
+        let mut turtle = Turtle::new(&mut image);
+        let mut vars = HashMap::new();
+
+        let ast = vec![ASTNode::Command(Command::Right(Expression::Float(30.0)))];
+
+        execute(&ast, &mut turtle, &mut vars).unwrap();
+
+        assert_eq!(turtle.x, 80.0);
+    }
+
+    #[test]
+    fn test_execute_set_pen_color() {
+        let mut image = Image::new(100, 100);
+        let mut turtle = Turtle::new(&mut image);
+        let mut vars = HashMap::new();
+
+        let ast = vec![ASTNode::Command(Command::SetPenColor(Expression::Usize(1)))];
+
+        execute(&ast, &mut turtle, &mut vars).unwrap();
+
+        assert_eq!(turtle.pen_color, 1);
+    }
+
+    #[test]
+    fn test_execute_turn() {
+        let mut image = Image::new(100, 100);
+        let mut turtle = Turtle::new(&mut image);
+        let mut vars = HashMap::new();
+
+        let ast = vec![ASTNode::Command(Command::Turn(Expression::Number(30)))];
+
+        execute(&ast, &mut turtle, &mut vars).unwrap();
+
+        assert_eq!(turtle.heading, 30);
+    }
+
+    #[test]
+    fn test_execute_set_heading() {
+        let mut image = Image::new(100, 100);
+        let mut turtle = Turtle::new(&mut image);
+        let mut vars = HashMap::new();
+
+        let ast = vec![ASTNode::Command(Command::SetHeading(Expression::Number(
+            30,
+        )))];
+
+        execute(&ast, &mut turtle, &mut vars).unwrap();
+
+        assert_eq!(turtle.heading, 30);
+    }
+
+    #[test]
+    fn test_execute_set_x() {
+        let mut image = Image::new(100, 100);
+        let mut turtle = Turtle::new(&mut image);
+        let mut vars = HashMap::new();
+
+        turtle.set_y(50.0);
+
+        let ast = vec![ASTNode::Command(Command::SetX(Expression::Float(30.0)))];
+
+        execute(&ast, &mut turtle, &mut vars).unwrap();
+
+        assert_eq!(turtle.x, 30.0);
+    }
+
+    #[test]
+    fn test_execute_set_y() {
+        let mut image = Image::new(100, 100);
+        let mut turtle = Turtle::new(&mut image);
+        let mut vars = HashMap::new();
+
+        turtle.set_x(50.0);
+
+        let ast = vec![ASTNode::Command(Command::SetY(Expression::Float(30.0)))];
+
+        execute(&ast, &mut turtle, &mut vars).unwrap();
+
+        assert_eq!(turtle.y, 30.0);
+    }
+
+    #[test]
+    fn test_execute_make_queries() {
+        let mut image = Image::new(100, 100);
+        let mut turtle = Turtle::new(&mut image);
+        let mut vars = HashMap::new();
+
+        let ast = vec![
+            ASTNode::Command(Command::Make(
+                "x".to_string(),
+                Expression::Query(Query::XCor),
+            )),
+            ASTNode::Command(Command::Make(
+                "y".to_string(),
+                Expression::Query(Query::YCor),
+            )),
+            ASTNode::Command(Command::Make(
+                "heading".to_string(),
+                Expression::Query(Query::Heading),
+            )),
+            ASTNode::Command(Command::Make(
+                "color".to_string(),
+                Expression::Query(Query::Color),
+            )),
+        ];
+
+        execute(&ast, &mut turtle, &mut vars).unwrap();
+
+        assert_eq!(vars.get("x").unwrap(), &Expression::Float(50.0));
+        assert_eq!(vars.get("y").unwrap(), &Expression::Float(50.0));
+        assert_eq!(vars.get("heading").unwrap(), &Expression::Number(0));
+        assert_eq!(vars.get("color").unwrap(), &Expression::Usize(7));
+    }
+
+    #[test]
+    fn test_execute_make_other() {
+        let mut image = Image::new(100, 100);
+        let mut turtle = Turtle::new(&mut image);
+        let mut vars = HashMap::new();
+
+        let ast = vec![
+            ASTNode::Command(Command::Make("float".to_string(), Expression::Float(30.0))),
+            ASTNode::Command(Command::Make("number".to_string(), Expression::Number(30))),
+            ASTNode::Command(Command::Make("usize".to_string(), Expression::Usize(1))),
+            ASTNode::Command(Command::Make(
+                "math".to_string(),
+                Expression::Math(Box::new(Math::Add(
+                    Expression::Float(10.0),
+                    Expression::Float(10.0),
+                ))),
+            )),
+        ];
+
+        execute(&ast, &mut turtle, &mut vars).unwrap();
+
+        assert_eq!(vars.get("float").unwrap(), &Expression::Float(30.0));
+        assert_eq!(vars.get("number").unwrap(), &Expression::Number(30));
+        assert_eq!(vars.get("usize").unwrap(), &Expression::Usize(1));
+        assert_eq!(vars.get("math").unwrap(), &Expression::Float(20.0));
+    }
+
+    #[test]
+    fn test_execute_make_err() {
+        // Only one case where there will be an error is when the expression is
+        // a variable.
+        let mut image = Image::new(100, 100);
+        let mut turtle = Turtle::new(&mut image);
+        let mut vars = HashMap::new();
+
+        let ast = vec![ASTNode::Command(Command::Make(
+            "x".to_string(),
+            Expression::Variable("y".to_string()),
+        ))];
+
+        let result = execute(&ast, &mut turtle, &mut vars);
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_execute_add_assign() {
+        let mut image = Image::new(100, 100);
+        let mut turtle = Turtle::new(&mut image);
+        let mut vars = HashMap::new();
+        vars.insert("x".to_string(), Expression::Float(10.0));
+
+        let ast = vec![ASTNode::Command(Command::AddAssign(
+            "x".to_string(),
+            Expression::Float(10.0),
+        ))];
+
+        execute(&ast, &mut turtle, &mut vars).unwrap();
+
+        assert_eq!(vars.get("x").unwrap(), &Expression::Float(20.0));
+    }
+
+    #[test]
+    fn test_execute_add_assign_err() {
+        let mut image = Image::new(100, 100);
+        let mut turtle = Turtle::new(&mut image);
+        let mut vars = HashMap::new();
+
+        let ast = vec![ASTNode::Command(Command::AddAssign(
+            "x".to_string(),
+            Expression::Float(10.0),
+        ))];
+
+        let result = execute(&ast, &mut turtle, &mut vars);
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_execute_if() {
+        let mut image = Image::new(100, 100);
+        let mut turtle = Turtle::new(&mut image);
+        let mut vars = HashMap::new();
+        vars.insert("x".to_string(), Expression::Float(10.0));
+
+        let ast = vec![ASTNode::ControlFlow(ControlFlow::If {
+            condition: Condition::Equals(
+                Expression::Float(10.0),
+                Expression::Math(Box::new(Math::Add(
+                    Expression::Float(5.0),
+                    Expression::Float(5.0),
+                ))),
+            ),
+            block: vec![ASTNode::Command(Command::AddAssign(
+                "x".to_string(),
+                Expression::Float(10.0),
+            ))],
+        })];
+
+        execute(&ast, &mut turtle, &mut vars).unwrap();
+
+        assert_eq!(vars.get("x").unwrap(), &Expression::Float(20.0));
+    }
+
+    #[test]
+    fn test_execute_while() {
+        let mut image = Image::new(100, 100);
+        let mut turtle = Turtle::new(&mut image);
+        let mut vars = HashMap::new();
+        vars.insert("x".to_string(), Expression::Float(10.0));
+
+        let ast = vec![ASTNode::ControlFlow(ControlFlow::While {
+            condition: Condition::LessThan(
+                Expression::Variable("x".to_string()),
+                Expression::Float(20.0),
+            ),
+            block: vec![ASTNode::Command(Command::AddAssign(
+                "x".to_string(),
+                Expression::Float(1.0),
+            ))],
+        })];
+
+        execute(&ast, &mut turtle, &mut vars).unwrap();
+
+        assert_eq!(vars.get("x").unwrap(), &Expression::Float(20.0));
+    }
+}
