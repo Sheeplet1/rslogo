@@ -149,3 +149,162 @@ fn should_execute(
         Condition::Or(lhs, rhs) => comparator(lhs, rhs, |a, b| a != 0.0 || b != 0.0, turtle, vars),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+
+    use unsvg::Image;
+
+    use crate::parser::ast::{ASTNode, Command, Condition, Expression};
+
+    use super::*;
+
+    #[test]
+    fn test_comparator() {
+        let vars: HashMap<String, Expression> = HashMap::new();
+        let mut image = Image::new(100, 100);
+        let turtle = Turtle::new(&mut image);
+
+        let lhs = Expression::Float(8.0);
+        let rhs = Expression::Float(10.0);
+
+        let res = comparator(&lhs, &rhs, |a, b| a < b, &turtle, &vars).unwrap();
+        assert!(res);
+    }
+
+    #[test]
+    fn test_if_true() {
+        let mut vars: HashMap<String, Expression> = HashMap::new();
+        let mut image = Image::new(100, 100);
+        let mut turtle = Turtle::new(&mut image);
+
+        let condition = Condition::Equals(Expression::Float(1.0), Expression::Float(1.0));
+        let block = vec![ASTNode::Command(Command::PenDown)];
+
+        let res = eval_exec_if(&condition, &block, &mut turtle, &mut vars);
+        assert!(res.is_ok());
+        assert!(turtle.pen_down);
+    }
+
+    #[test]
+    fn test_if_false() {
+        let mut vars: HashMap<String, Expression> = HashMap::new();
+        let mut image = Image::new(100, 100);
+        let mut turtle = Turtle::new(&mut image);
+
+        let condition = Condition::Equals(Expression::Float(1.0), Expression::Float(2.0));
+        let block = vec![ASTNode::Command(Command::PenDown)];
+
+        let res = eval_exec_if(&condition, &block, &mut turtle, &mut vars);
+        assert!(res.is_ok());
+        assert!(!turtle.pen_down);
+    }
+
+    #[test]
+    fn test_while_executes_correctly() {
+        let mut vars = HashMap::new();
+        vars.insert("counter".to_string(), Expression::Float(0.0));
+
+        let condition = Condition::LessThan(
+            Expression::Variable("counter".to_string()),
+            Expression::Float(3.0),
+        );
+
+        let block = vec![
+            ASTNode::Command(Command::Forward(Expression::Float(10.0))),
+            ASTNode::Command(Command::Right(Expression::Float(10.0))),
+            ASTNode::Command(Command::AddAssign(
+                "counter".to_string(),
+                Expression::Float(1.0),
+            )),
+        ];
+
+        let mut image = Image::new(100, 100);
+        let mut turtle = Turtle::new(&mut image);
+        turtle.pen_down = true;
+
+        let result = eval_exec_while(&condition, &block, &mut turtle, &mut vars);
+        assert!(result.is_ok());
+
+        // Check if turtle has moved correctly and counter variable has increased
+        assert_eq!(turtle.y, 20.0);
+        assert_eq!(turtle.x, 80.0);
+
+        match vars.get("counter") {
+            Some(Expression::Float(val)) => assert_eq!(*val, 3.0),
+            _ => panic!("Counter variable was not incremented correctly"),
+        }
+    }
+
+    #[test]
+    fn test_while_does_not_execute() {
+        let mut vars = HashMap::new();
+        vars.insert("counter".to_string(), Expression::Float(3.0));
+
+        let condition = Condition::LessThan(
+            Expression::Variable("counter".to_string()),
+            Expression::Float(3.0),
+        );
+
+        let block = vec![
+            ASTNode::Command(Command::Forward(Expression::Float(10.0))),
+            ASTNode::Command(Command::Right(Expression::Float(10.0))),
+            ASTNode::Command(Command::AddAssign(
+                "counter".to_string(),
+                Expression::Float(1.0),
+            )),
+        ];
+
+        let mut image = Image::new(100, 100);
+        let mut turtle = Turtle::new(&mut image);
+        turtle.pen_down = true;
+
+        let result = eval_exec_while(&condition, &block, &mut turtle, &mut vars);
+        assert!(result.is_ok());
+
+        // Check if turtle has moved correctly and counter variable has increased
+        assert_eq!(turtle.y, 50.0);
+        assert_eq!(turtle.x, 50.0);
+
+        match vars.get("counter") {
+            Some(Expression::Float(val)) => assert_eq!(*val, 3.0),
+            _ => panic!("Counter variable was not incremented correctly"),
+        }
+    }
+
+    #[test]
+    fn test_should_execute_gt() {
+        let vars: HashMap<String, Expression> = HashMap::new();
+        let mut image = Image::new(100, 100);
+        let turtle = Turtle::new(&mut image);
+
+        let condition = Condition::GreaterThan(Expression::Float(8.0), Expression::Float(10.0));
+        let res = should_execute(&condition, &turtle, &vars).unwrap();
+        assert!(!res);
+    }
+
+    #[test]
+    fn test_should_execute_and() {
+        let vars: HashMap<String, Expression> = HashMap::new();
+        let mut image = Image::new(100, 100);
+        let turtle = Turtle::new(&mut image);
+
+        let condition = Condition::And(Expression::Float(1.0), Expression::Float(0.0));
+
+        let res = should_execute(&condition, &turtle, &vars).unwrap();
+        assert!(!res);
+    }
+
+    #[test]
+    fn test_should_execute_or() {
+        let vars: HashMap<String, Expression> = HashMap::new();
+        let mut image = Image::new(100, 100);
+        let turtle = Turtle::new(&mut image);
+
+        let condition = Condition::Or(Expression::Float(1.0), Expression::Float(0.0));
+
+        let res = should_execute(&condition, &turtle, &vars).unwrap();
+        assert!(res);
+    }
+}
