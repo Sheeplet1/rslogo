@@ -147,7 +147,7 @@ mod tests {
 
     use unsvg::Image;
 
-    use crate::parser::ast::{Command, Condition, Expression, Math, Query};
+    use crate::ast::{Command, Condition, Expression, Math, Query};
 
     use super::*;
 

@@ -229,7 +229,7 @@ mod tests {
     use unsvg::Image;
 
     use super::*;
-    use crate::parser::ast::Query;
+    use crate::ast::Query;
 
     #[test]
     fn test_match_queries() {

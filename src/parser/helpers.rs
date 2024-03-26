@@ -277,7 +277,8 @@ pub fn parse_maths(
 
 #[cfg(test)]
 mod tests {
-    use crate::parser::ast::Command;
+
+    use crate::ast::Command;
 
     use super::*;
 
