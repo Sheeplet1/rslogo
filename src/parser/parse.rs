@@ -8,12 +8,9 @@
 
 use std::collections::HashMap;
 
-use crate::parser::ast::ControlFlow;
+use crate::ast::{ASTNode, Command, ControlFlow, Expression};
 
 use super::{
-    ast::ASTNode,
-    ast::Command,
-    ast::Expression,
     errors::{ParseError, ParseErrorKind},
     helpers::{match_parse, parse_conditional_blocks, parse_conditions},
 };
@@ -192,7 +189,7 @@ pub fn parse_tokens(
 mod tests {
     use std::collections::HashMap;
 
-    use crate::parser::ast::Condition;
+    use crate::ast::Condition;
 
     use super::*;
 

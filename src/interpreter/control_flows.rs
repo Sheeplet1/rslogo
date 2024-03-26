@@ -5,7 +5,7 @@
 
 use std::collections::HashMap;
 
-use crate::parser::ast::{ASTNode, Condition, Expression};
+use crate::ast::{ASTNode, Condition, Expression};
 
 use super::{errors::ExecutionError, execute::execute, matches::match_expressions, turtle::Turtle};
 
@@ -163,7 +163,7 @@ mod tests {
 
     use unsvg::Image;
 
-    use crate::parser::ast::{ASTNode, Command, Condition, Expression};
+    use crate::ast::{ASTNode, Command, Condition, Expression};
 
     use super::*;
 

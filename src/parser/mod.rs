@@ -1,5 +1,4 @@
-pub mod ast;
-pub mod errors;
+mod errors;
 mod helpers;
-pub mod parser;
+pub mod parse;
 pub mod tokenise;

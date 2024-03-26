@@ -5,11 +5,12 @@
 
 use std::collections::HashMap;
 
+use crate::ast::{ASTNode, Condition, Expression, Math, Query};
+
 use super::{
-    ast::{ASTNode, Condition, Expression, Math, Query},
     errors::ParseError,
     errors::ParseErrorKind::{self, VariableNotFound},
-    parser::parse_tokens,
+    parse::parse_tokens,
 };
 
 /// Matches and parses a token into an `Expression`.

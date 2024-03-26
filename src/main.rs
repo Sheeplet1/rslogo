@@ -1,5 +1,3 @@
-#![deny(missing_docs)]
-
 //! # rslogo
 //!
 //! A simple Logo interpreter which produces the subsequent SVG images.
@@ -13,11 +11,13 @@
 //! This will run the program with the file `examples/flower.lg` and output
 //! the image to `examples/flower.svg` with a height and width of 1000.
 
+pub mod ast;
 mod interpreter;
 mod parser;
 
+use ast::Expression;
 use interpreter::{execute::execute, turtle::Turtle};
-use parser::{ast::Expression, parser::parse_tokens, tokenise::tokenize_script};
+use parser::{parse::parse_tokens, tokenise::tokenize_script};
 use std::{collections::HashMap, error::Error, fs::File, io::Read};
 
 use clap::Parser;

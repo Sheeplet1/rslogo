@@ -3,7 +3,7 @@
 
 use std::collections::HashMap;
 
-use crate::parser::ast::{ASTNode, Command, ControlFlow, Expression, Query};
+use crate::ast::{ASTNode, Command, ControlFlow, Expression, Query};
 
 use super::{
     control_flows::{eval_exec_if, eval_exec_while},

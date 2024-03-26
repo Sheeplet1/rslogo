@@ -4,7 +4,7 @@
 
 use std::collections::HashMap;
 
-use crate::parser::ast::{Expression, Math, Query};
+use crate::ast::{Expression, Math, Query};
 
 use super::{
     errors::{ExecutionError, ExecutionErrorKind},
